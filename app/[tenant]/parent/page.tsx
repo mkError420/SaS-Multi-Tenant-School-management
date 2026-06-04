@@ -36,7 +36,7 @@ export default async function ParentPage({ params }: Props) {
         </div>
         <div className="rounded-3xl bg-slate-950 p-6">
           <p className="text-sm uppercase tracking-[0.25em] text-slate-500">Outstanding fees</p>
-          <p className="mt-3 text-lg font-semibold text-white">${portal.outstandingFees}</p>
+          <p className="mt-3 text-lg font-semibold text-white">৳{portal.outstandingFees}</p>
         </div>
         <div className="rounded-3xl bg-slate-950 p-6">
           <p className="text-sm uppercase tracking-[0.25em] text-slate-500">Teacher contact</p>

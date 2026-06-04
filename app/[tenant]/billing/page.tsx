@@ -27,7 +27,7 @@ export default async function BillingPage({ params }: Props) {
         </div>
         <div className="rounded-3xl bg-slate-950/80 px-5 py-4 text-right">
           <p className="text-sm uppercase tracking-[0.3em] text-slate-500">Outstanding</p>
-          <p className="mt-2 text-3xl font-semibold text-white">${totalDue.toLocaleString()}</p>
+          <p className="mt-2 text-3xl font-semibold text-white">৳{totalDue.toLocaleString()}</p>
         </div>
       </div>
 
@@ -45,7 +45,7 @@ export default async function BillingPage({ params }: Props) {
             {invoices.map((invoice) => (
               <tr key={invoice.id} className="border-b border-slate-800 last:border-none">
                 <td className="px-6 py-4 text-slate-100">{invoice.label}</td>
-                <td className="px-6 py-4 text-slate-300">${invoice.amount.toLocaleString()}</td>
+                <td className="px-6 py-4 text-slate-300">৳{invoice.amount.toLocaleString()}</td>
                 <td className="px-6 py-4 text-slate-300">{invoice.due}</td>
                 <td className="px-6 py-4 text-slate-300">{invoice.status}</td>
               </tr>

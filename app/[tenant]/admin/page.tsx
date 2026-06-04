@@ -55,7 +55,7 @@ export default async function AdminPage({ params }: Props) {
                   <p className="text-white">{invoice.label}</p>
                   <span className="text-sm text-slate-400">{invoice.status}</span>
                 </div>
-                <p className="mt-2 text-slate-300">Due: {invoice.due} — ${invoice.amount}</p>
+                <p className="mt-2 text-slate-300">Due: {invoice.due} — ৳{invoice.amount}</p>
               </div>
             ))}
           </div>

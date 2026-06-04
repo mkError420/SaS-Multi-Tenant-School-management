@@ -68,8 +68,8 @@ export default function SuperAdminTenantManagement({ initialTenants }: Props) {
     <div className="rounded-3xl border border-slate-800 bg-slate-900/90 p-6 shadow-soft sm:p-8">
       <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-white">Tenant management</h2>
-          <p className="mt-2 text-sm text-slate-400">View and moderate tenant accounts, status updates, and onboarding progress.</p>
+          <h2 className="text-2xl font-semibold text-white">All School management</h2>
+          <p className="mt-2 text-sm text-slate-400">View and moderate School accounts, status updates, and onboarding progress.</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -141,7 +141,7 @@ export default function SuperAdminTenantManagement({ initialTenants }: Props) {
                 </div>
                 <div className="rounded-3xl bg-slate-900 p-3 text-sm text-slate-300">
                   <p className="text-slate-500">Revenue</p>
-                  <p className="mt-1 font-semibold text-white">${tenant.revenue.toLocaleString()}</p>
+                  <p className="mt-1 font-semibold text-white">৳{tenant.revenue.toLocaleString()}</p>
                 </div>
               </div>
               <div className="mt-5 flex flex-wrap items-center gap-3">

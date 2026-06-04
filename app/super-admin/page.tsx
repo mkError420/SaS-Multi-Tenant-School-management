@@ -58,7 +58,7 @@ export default async function SuperAdminPage() {
                 </div>
                 <div className="rounded-3xl border border-slate-800 bg-slate-950 p-5">
                   <p className="text-xs uppercase tracking-[0.32em] text-slate-500">Revenue</p>
-                  <p className="mt-4 text-3xl font-semibold text-white">${analytics.totalRevenue.toLocaleString()}</p>
+                  <p className="mt-4 text-3xl font-semibold text-white">৳{analytics.totalRevenue.toLocaleString()}</p>
                 </div>
               </div>
             </div>
@@ -81,7 +81,7 @@ export default async function SuperAdminPage() {
                       <h3 className="text-lg font-semibold text-white">{plan.name}</h3>
                       <p className="mt-2 text-sm text-slate-400">{plan.description}</p>
                     </div>
-                    <span className="rounded-full bg-slate-800 px-3 py-1 text-sm text-slate-300">${plan.price}/mo</span>
+                    <span className="rounded-full bg-slate-800 px-3 py-1 text-sm text-slate-300">৳{plan.price}/mo</span>
                   </div>
                   <p className="mt-4 text-sm text-slate-500">Student limit: {plan.studentLimit === -1 ? 'Unlimited' : plan.studentLimit}</p>
                 </div>
