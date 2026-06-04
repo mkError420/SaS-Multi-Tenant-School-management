@@ -21,6 +21,7 @@ A responsive SaaS-style school management portal built with:
 2. Set `MONGODB_URI` and `MONGODB_DB`
    - If using MongoDB Atlas, use a URI like:
      `mongodb+srv://<username>:<password>@cluster0.mongodb.net/zass-management?retryWrites=true&w=majority`
+   - If your environment cannot resolve SRV records, use an explicit host-list URI with `tls=true` and `authSource=admin`.
    - Make sure your Atlas cluster is running and your IP is allowed in the network access whitelist.
 3. Install dependencies:
    ```bash

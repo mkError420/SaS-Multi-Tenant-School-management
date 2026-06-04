@@ -1,10 +1,7 @@
-import dns from 'dns';
 import { MongoClient } from 'mongodb';
 
 const uri = process.env.MONGODB_URI?.trim() ?? '';
 const dbName = process.env.MONGODB_DB?.trim();
-
-dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 if (!uri) {
   console.warn('MONGODB_URI is not defined. The app will fall back to sample tenant data.');

@@ -1,7 +1,10 @@
+export const dynamic = 'force-dynamic';
+
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import TenantStatusButton from '../../components/TenantStatusButton';
+import SuperAdminTenantManagement from '../../components/SuperAdminTenantManagement';
+import LogoutButton from '../../components/LogoutButton';
 import { getAllTenants } from '../../lib/tenant';
 import { getPlatformAnalytics, getSubscriptionPlans } from '../../lib/school';
 
@@ -38,22 +41,25 @@ export default async function SuperAdminPage() {
                 Monitor tenant onboarding, subscription plans, revenue, and platform metrics from a responsive centralized dashboard.
               </p>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 xl:gap-5">
-              <div className="rounded-3xl border border-slate-800 bg-slate-950 p-5">
-                <p className="text-xs uppercase tracking-[0.32em] text-slate-500">Total schools</p>
-                <p className="mt-4 text-3xl font-semibold text-white">{analytics.totalSchools}</p>
-              </div>
-              <div className="rounded-3xl border border-slate-800 bg-slate-950 p-5">
-                <p className="text-xs uppercase tracking-[0.32em] text-slate-500">Active schools</p>
-                <p className="mt-4 text-3xl font-semibold text-white">{analytics.activeSchools}</p>
-              </div>
-              <div className="rounded-3xl border border-slate-800 bg-slate-950 p-5">
-                <p className="text-xs uppercase tracking-[0.32em] text-slate-500">Students</p>
-                <p className="mt-4 text-3xl font-semibold text-white">{analytics.totalStudents}</p>
-              </div>
-              <div className="rounded-3xl border border-slate-800 bg-slate-950 p-5">
-                <p className="text-xs uppercase tracking-[0.32em] text-slate-500">Revenue</p>
-                <p className="mt-4 text-3xl font-semibold text-white">${analytics.totalRevenue.toLocaleString()}</p>
+            <div className="flex items-start justify-between gap-4 xl:gap-5">
+              <LogoutButton />
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 xl:gap-5">
+                <div className="rounded-3xl border border-slate-800 bg-slate-950 p-5">
+                  <p className="text-xs uppercase tracking-[0.32em] text-slate-500">Total schools</p>
+                  <p className="mt-4 text-3xl font-semibold text-white">{analytics.totalSchools}</p>
+                </div>
+                <div className="rounded-3xl border border-slate-800 bg-slate-950 p-5">
+                  <p className="text-xs uppercase tracking-[0.32em] text-slate-500">Active schools</p>
+                  <p className="mt-4 text-3xl font-semibold text-white">{analytics.activeSchools}</p>
+                </div>
+                <div className="rounded-3xl border border-slate-800 bg-slate-950 p-5">
+                  <p className="text-xs uppercase tracking-[0.32em] text-slate-500">Students</p>
+                  <p className="mt-4 text-3xl font-semibold text-white">{analytics.totalStudents}</p>
+                </div>
+                <div className="rounded-3xl border border-slate-800 bg-slate-950 p-5">
+                  <p className="text-xs uppercase tracking-[0.32em] text-slate-500">Revenue</p>
+                  <p className="mt-4 text-3xl font-semibold text-white">${analytics.totalRevenue.toLocaleString()}</p>
+                </div>
               </div>
             </div>
           </div>
@@ -61,55 +67,7 @@ export default async function SuperAdminPage() {
       </section>
 
       <section className="mt-8 grid gap-6 xl:grid-cols-[1.8fr_1fr]">
-        <div className="rounded-3xl border border-slate-800 bg-slate-900/90 p-6 shadow-soft sm:p-8">
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="text-2xl font-semibold text-white">Tenant management</h2>
-              <p className="mt-2 text-sm text-slate-400">View and moderate tenant accounts, status updates, and onboarding progress.</p>
-            </div>
-            <Link
-              href="/onboarding"
-              className="inline-flex items-center justify-center rounded-2xl bg-sky-500 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-sky-400"
-            >
-              Add new tenant
-            </Link>
-          </div>
-
-          <div className="mt-8 space-y-4">
-            {tenants.map((tenant) => (
-              <div key={tenant.slug} className="overflow-hidden rounded-3xl border border-slate-800 bg-slate-950 p-5 shadow-sm">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium uppercase tracking-[0.3em] text-slate-500">{tenant.plan}</p>
-                    <h3 className="mt-2 text-xl font-semibold text-white truncate">{tenant.name}</h3>
-                    <p className="mt-2 text-sm text-slate-400">{tenant.description}</p>
-                  </div>
-                  <TenantStatusButton slug={tenant.slug} currentStatus={tenant.status} />
-                </div>
-                <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-3xl bg-slate-900 p-3 text-sm text-slate-300">
-                    <p className="text-slate-500">City</p>
-                    <p className="mt-1 font-semibold text-white">{tenant.city}</p>
-                  </div>
-                  <div className="rounded-3xl bg-slate-900 p-3 text-sm text-slate-300">
-                    <p className="text-slate-500">Students</p>
-                    <p className="mt-1 font-semibold text-white">{tenant.students}</p>
-                  </div>
-                  <div className="rounded-3xl bg-slate-900 p-3 text-sm text-slate-300">
-                    <p className="text-slate-500">Revenue</p>
-                    <p className="mt-1 font-semibold text-white">${tenant.revenue.toLocaleString()}</p>
-                  </div>
-                </div>
-                <div className="mt-5 flex flex-wrap items-center gap-3">
-                  <Link href={`/${tenant.slug}`} className="rounded-2xl border border-slate-800 bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:border-sky-400 hover:text-white">
-                    Open dashboard
-                  </Link>
-                  <span className="rounded-full bg-slate-800 px-3 py-1 text-xs uppercase tracking-[0.32em] text-slate-400">{tenant.status}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <SuperAdminTenantManagement initialTenants={tenants} />
 
         <div className="space-y-6">
           <div className="rounded-3xl border border-slate-800 bg-slate-900/90 p-6 shadow-soft sm:p-8">

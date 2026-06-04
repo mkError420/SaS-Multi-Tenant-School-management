@@ -5,6 +5,7 @@ import { useState } from 'react';
 type Props = {
   slug: string;
   currentStatus: 'active' | 'pending' | 'suspended';
+  onStatusChange?: (status: 'active' | 'pending' | 'suspended') => void;
 };
 
 const statusLabels = {
@@ -19,7 +20,7 @@ const statusClasses = {
   suspended: 'bg-rose-500 text-slate-950',
 };
 
-export default function TenantStatusButton({ slug, currentStatus }: Props) {
+export default function TenantStatusButton({ slug, currentStatus, onStatusChange }: Props) {
   const [status, setStatus] = useState(currentStatus);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -35,15 +36,22 @@ export default function TenantStatusButton({ slug, currentStatus }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),
       });
-      const data = await response.json();
+      const text = await response.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error(`Unexpected API response: ${text.slice(0, 200)}`);
+      }
       if (!response.ok) {
         setMessage(data.error || 'Unable to update status.');
       } else {
         setStatus(newStatus);
         setMessage(`Status updated to ${statusLabels[newStatus]}.`);
+        onStatusChange?.(newStatus);
       }
     } catch (error) {
-      setMessage('Network error updating status.');
+      setMessage((error as Error).message || 'Network error updating status.');
     }
 
     setLoading(false);
