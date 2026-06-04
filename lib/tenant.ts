@@ -58,6 +58,7 @@ const defaultTenants: Tenant[] = [
 ];
 
 export async function getAllTenants() {
+  // Demo fallback ONLY when Mongo is not configured at all.
   if (!process.env.MONGODB_URI) {
     return defaultTenants;
   }
@@ -65,9 +66,6 @@ export async function getAllTenants() {
   try {
     const db = await getDatabase();
     const tenants = await db.collection('tenants').find().toArray();
-    if (tenants.length === 0) {
-      return defaultTenants;
-    }
 
     return tenants.map((tenant: any) => ({
       id: tenant._id.toString(),
@@ -84,11 +82,13 @@ export async function getAllTenants() {
     })) as Tenant[];
   } catch (error) {
     console.error('Failed to fetch tenants from MongoDB:', error);
-    return defaultTenants;
+    // Avoid returning demo tenants when Mongo is configured but failing.
+    return [];
   }
 }
 
 export async function getTenantBySlug(slug: string) {
+  // Demo fallback ONLY when Mongo is not configured at all.
   if (!process.env.MONGODB_URI) {
     return defaultTenants.find((tenant) => tenant.slug === slug) ?? null;
   }
@@ -97,7 +97,7 @@ export async function getTenantBySlug(slug: string) {
     const db = await getDatabase();
     const tenant = await db.collection('tenants').findOne({ slug });
     if (!tenant) {
-      return defaultTenants.find((tenant) => tenant.slug === slug) ?? null;
+      return null;
     }
 
     return {
@@ -115,7 +115,8 @@ export async function getTenantBySlug(slug: string) {
     } as Tenant;
   } catch (error) {
     console.error('Failed to fetch tenant from MongoDB:', error);
-    return defaultTenants.find((tenant) => tenant.slug === slug) ?? null;
+    // Avoid returning demo tenant when Mongo is configured but failing.
+    return null;
   }
 }
 

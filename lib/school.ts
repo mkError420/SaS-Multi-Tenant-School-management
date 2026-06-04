@@ -196,7 +196,7 @@ export async function getTenantStudents(tenantSlug: string) {
     return (await db.collection<Student>('students').find({ tenantSlug }).toArray()) as Student[];
   } catch (error) {
     console.error('Failed to load tenant students:', error);
-    return defaultStudents;
+    return [];
   }
 }
 
@@ -210,7 +210,7 @@ export async function getTenantTeachers(tenantSlug: string) {
     return (await db.collection<Teacher>('teachers').find({ tenantSlug }).toArray()) as Teacher[];
   } catch (error) {
     console.error('Failed to load tenant teachers:', error);
-    return defaultTeachers;
+    return [];
   }
 }
 
@@ -224,7 +224,7 @@ export async function getTenantSchedule(tenantSlug: string) {
     return (await db.collection<ClassSchedule>('classes').find({ tenantSlug }).toArray()) as ClassSchedule[];
   } catch (error) {
     console.error('Failed to load tenant schedule:', error);
-    return defaultSchedule;
+    return [];
   }
 }
 
@@ -238,9 +238,10 @@ export async function getTenantBilling(tenantSlug: string) {
     return (await db.collection<BillingRecord>('billing').find({ tenantSlug }).toArray()) as BillingRecord[];
   } catch (error) {
     console.error('Failed to load tenant billing:', error);
-    return defaultBilling;
+    return [];
   }
 }
+
 
 export function getSubscriptionPlans() {
   return defaultPlans;
@@ -417,11 +418,17 @@ export async function onboardTenant(payload: OnboardTenantPayload) {
     status: 'pending' as const,
   };
 
+  // Create tenant record (or ensure it exists) so tenant pages can rely on MongoDB-backed state.
   const insertResult = await db.collection('tenants').insertOne(tenant);
+
+  // Provision required tenant-scoped data.
+  // Using insertOne because these defaults should only be created at tenant onboarding time.
   await db.collection('students').insertOne(defaultStudent);
   await db.collection('teachers').insertOne(defaultTeacher);
   await db.collection('classes').insertOne(defaultClass);
   await db.collection('billing').insertOne(defaultInvoice);
+
+  // Also ensure the admin user exists for tenant.
   await signUpUser(payload.adminEmail, payload.adminPassword, payload.slug, 'admin');
 
   return {
