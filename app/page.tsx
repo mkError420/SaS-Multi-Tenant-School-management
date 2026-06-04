@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getAllTenants } from '../lib/tenant';
+import { getSubscriptionPlans } from '../lib/school';
 
 export const metadata: Metadata = {
   title: 'Zass SaaS',
@@ -8,6 +9,7 @@ export const metadata: Metadata = {
 
 export default async function HomePage() {
   const tenants = await getAllTenants();
+  const plans = getSubscriptionPlans();
 
   return (
     <main className="mx-auto max-w-7xl px-6 py-12 lg:px-8">
@@ -70,6 +72,32 @@ export default async function HomePage() {
               </div>
               <p className="mt-6 text-sm leading-6 text-slate-400">{tenant.description}</p>
             </Link>
+          ))}
+        </div>
+      </section>
+            <section className="mt-16">
+        <div className="flex flex-wrap items-center justify-between gap-6">
+          <div>
+            <p className="text-sm uppercase tracking-[0.3em] text-sky-400">Subscription plans</p>
+            <h2 className="mt-3 text-3xl font-semibold text-white">Choose the right plan for your school</h2>
+          </div>
+          <p className="max-w-2xl text-sm leading-6 text-slate-400">
+            Select an affordable Taka-based school plan with the right tools for your organization, from essential school management to advanced analytics and support.
+          </p>
+        </div>
+
+        <div className="mt-10 grid gap-6 sm:grid-cols-3">
+          {plans.map((plan) => (
+            <article key={plan.id} className="rounded-3xl border border-slate-800 bg-slate-900/80 p-8 shadow-soft">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-xl font-semibold text-white">{plan.name}</h3>
+                  <p className="mt-3 text-sm text-slate-400">{plan.description}</p>
+                </div>
+                <div className="rounded-2xl bg-slate-800 px-4 py-2 text-sm font-semibold text-sky-300">Taka {plan.price}</div>
+              </div>
+              <p className="mt-6 text-sm leading-6 text-slate-400">Up to {plan.studentLimit > 0 ? plan.studentLimit : 'unlimited'} students.</p>
+            </article>
           ))}
         </div>
       </section>
