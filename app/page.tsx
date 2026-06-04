@@ -13,8 +13,8 @@ export default async function HomePage() {
 
   return (
     <main className="mx-auto max-w-7xl px-6 py-10 lg:px-8">
-      <section className="overflow-hidden rounded-[2rem] border border-slate-800 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 px-6 py-12 shadow-2xl shadow-slate-950/40 sm:px-10 lg:flex lg:items-center lg:justify-between lg:gap-12">
-        <div className="max-w-3xl text-center lg:text-left">
+      <section className="overflow-hidden rounded-[2rem] border border-slate-800 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 px-6 py-12 shadow-2xl shadow-slate-950/40 sm:px-10 lg:flex lg:flex-wrap lg:items-center lg:justify-between lg:gap-12">
+        <div className="w-full max-w-2xl text-center lg:text-left">
           <p className="text-sm uppercase tracking-[0.35em] text-sky-400">Zass SaaS school system</p>
           <h1 className="mt-6 text-4xl font-semibold tracking-tight text-white sm:text-5xl">
             Modern school management designed for fast onboarding and smarter campus operations.
@@ -32,7 +32,7 @@ export default async function HomePage() {
           </div>
         </div>
 
-        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:mt-0 lg:w-[420px]">
+        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:mt-0 lg:w-full lg:max-w-[420px]">
           <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 text-center">
             <p className="text-sm uppercase tracking-[0.3em] text-sky-400">Trusted</p>
             <p className="mt-3 text-4xl font-semibold text-white">3</p>
