@@ -377,9 +377,11 @@ export async function onboardTenant(payload: OnboardTenantPayload) {
     city: payload.city,
     description: payload.description,
     plan: payload.plan,
+    status: 'pending' as const,
     students: 0,
     teachers: 0,
     classes: 0,
+    revenue: 0,
   };
 
   const defaultStudent = {

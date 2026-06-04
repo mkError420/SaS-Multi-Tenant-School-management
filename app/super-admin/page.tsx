@@ -1,9 +1,27 @@
 import Link from 'next/link';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 import TenantStatusButton from '../../components/TenantStatusButton';
 import { getAllTenants } from '../../lib/tenant';
 import { getPlatformAnalytics, getSubscriptionPlans } from '../../lib/school';
 
 export default async function SuperAdminPage() {
+  const cookieStore = cookies();
+  const userCookie = cookieStore.get('schoolspace_user')?.value;
+  if (!userCookie) {
+    redirect('/login');
+  }
+
+  let user;
+  try {
+    user = JSON.parse(userCookie);
+  } catch {
+    redirect('/login');
+  }
+
+  if (user?.role !== 'super-admin') {
+    redirect('/login');
+  }
   const tenants = await getAllTenants();
   const analytics = await getPlatformAnalytics();
   const plans = getSubscriptionPlans();

@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, ChangeEvent, FormEvent } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function OnboardingPage() {
+  const router = useRouter();
   const [form, setForm] = useState({
     name: '',
     slug: '',
@@ -35,8 +37,8 @@ export default function OnboardingPage() {
       if (!response.ok) {
         setMessage(result.error || 'Unable to onboard tenant.');
       } else {
-        setMessage('Tenant created successfully. You can sign in using the new admin email.');
-        setForm({ name: '', slug: '', city: '', plan: 'Starter', description: '', adminEmail: '', adminPassword: '' });
+        setMessage('Tenant created successfully. Redirecting to login...');
+        router.push('/login');
       }
     } catch (error) {
       setMessage('An unexpected error occurred during onboarding.');

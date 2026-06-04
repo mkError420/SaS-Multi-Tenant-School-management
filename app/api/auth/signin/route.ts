@@ -15,7 +15,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 });
     }
 
-    return NextResponse.json({ message: 'Authentication successful.', user: { email: user.email, tenantSlug: user.tenantSlug, role: user.role } });
+    const response = NextResponse.json({ message: 'Authentication successful.', user: { email: user.email, tenantSlug: user.tenantSlug, role: user.role } });
+    response.cookies.set({
+      name: 'schoolspace_user',
+      value: JSON.stringify({ email: user.email, tenantSlug: user.tenantSlug, role: user.role }),
+      httpOnly: true,
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+    });
+
+    return response;
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Authentication failed.' }, { status: 500 });
   }

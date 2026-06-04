@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, FormEvent, ChangeEvent } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState<string | null>(null);
@@ -23,7 +25,8 @@ export default function LoginPage() {
       if (!response.ok) {
         setMessage(result.error || 'Unable to sign in.');
       } else {
-        setMessage('Welcome back! Authentication succeeded.');
+        setMessage('Welcome back! Authentication succeeded. Redirecting...');
+        router.push(result.user.role === 'super-admin' ? '/super-admin' : `/${result.user.tenantSlug}`);
       }
     } catch (error) {
       setMessage('An unexpected error occurred while signing in.');

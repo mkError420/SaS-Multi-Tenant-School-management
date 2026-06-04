@@ -18,7 +18,10 @@ A responsive SaaS-style school management portal built with:
 
 ## Getting Started
 1. Copy `.env.local.example` to `.env.local`
-2. Set `MONGODB_URI`
+2. Set `MONGODB_URI` and `MONGODB_DB`
+   - If using MongoDB Atlas, use a URI like:
+     `mongodb+srv://<username>:<password>@cluster0.mongodb.net/schoolspace?retryWrites=true&w=majority`
+   - Make sure your Atlas cluster is running and your IP is allowed in the network access whitelist.
 3. Install dependencies:
    ```bash
    npm install
@@ -28,6 +31,12 @@ A responsive SaaS-style school management portal built with:
    npm run dev
    ```
 5. Open `http://localhost:3000`
+
+### Troubleshooting Atlas DNS errors
+- If you see `querySrv ECONNREFUSED`, it usually means DNS SRV lookup failed.
+- Confirm the hostname in `MONGODB_URI` is correct.
+- Confirm your network allows DNS resolution for Atlas.
+- If you are behind a firewall, add your IP to Atlas access rules or use a local MongoDB URI.
 
 ## Project Structure
 - `app/` - Next.js pages and routing
