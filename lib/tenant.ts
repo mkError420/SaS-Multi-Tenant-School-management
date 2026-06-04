@@ -28,6 +28,19 @@ const defaultTenants: Tenant[] = [
     classes: 38,
     revenue: 98000,
   },
+    {
+    id: 'tenant_3',
+    name: 'Zass Middle School',
+    slug: 'zass-middle',
+    city: 'Rangpur',
+    description: 'A community-first school with strong support for families and teachers.',
+    plan: 'Starter',
+    status: 'pending',
+    students: 940,
+    teachers: 56,
+    classes: 27,
+    revenue: 47000,
+  },
   {
     id: 'tenant_2',
     name: 'Zass High School',
@@ -41,19 +54,7 @@ const defaultTenants: Tenant[] = [
     classes: 54,
     revenue: 145000,
   },
-  {
-    id: 'tenant_3',
-    name: 'Zass Middle School',
-    slug: 'zass-middle',
-    city: 'Rangpur',
-    description: 'A community-first school with strong support for families and teachers.',
-    plan: 'Starter',
-    status: 'pending',
-    students: 940,
-    teachers: 56,
-    classes: 27,
-    revenue: 47000,
-  },
+
 ];
 
 export async function getAllTenants() {
