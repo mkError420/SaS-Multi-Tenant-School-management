@@ -123,7 +123,7 @@ export default async function HomePage() {
         href="https://wa.me/8801572491828"
         target="_blank"
         rel="noopener noreferrer"
-        className="fixed bottom-6 right-6 z-50 inline-flex items-center gap-3 rounded-3xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-slate-950 shadow-2xl shadow-emerald-500/30 transition hover:bg-emerald-400"
+        className="fixed bottom-12 right-4 z-50 inline-flex items-center gap-2 rounded-3xl bg-emerald-500 px-3 py-2 text-xs font-semibold text-slate-950 shadow-2xl shadow-emerald-500/30 transition hover:bg-emerald-400"
       >
         <span className="h-6 w-6 rounded-full bg-white p-1 text-emerald-600">
           <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">

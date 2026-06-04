@@ -38,7 +38,7 @@ export default function LoginPage() {
   return (
     <main className="mx-auto max-w-2xl px-6 py-14 lg:px-8">
       <div className="rounded-3xl border border-slate-800 bg-slate-900/95 p-10 shadow-soft">
-        <h1 className="text-3xl font-semibold text-white">SchoolSpace login</h1>
+        <h1 className="text-3xl font-semibold text-white">Zass-management login</h1>
         <p className="mt-3 text-slate-400">Sign in as a school administrator or staff member to manage students, teachers, classes, and billing.</p>
 
         <form onSubmit={handleSubmit} className="mt-10 space-y-6">
