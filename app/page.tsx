@@ -17,10 +17,10 @@ export default async function HomePage() {
         <div className="w-full max-w-2xl text-center lg:text-left">
           <p className="text-sm uppercase tracking-[0.35em] text-sky-400">Zass SaaS school system</p>
           <h1 className="mt-6 text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-            Modern school management designed for fast onboarding and smarter campus operations.
+            Scale Your School Infrastructure with One Unified Platform.
           </h1>
           <p className="mt-6 text-base leading-8 text-slate-300 sm:text-lg">
-            Simplify every school with a powerful multi-tenant dashboard built for administrators, teachers, and staff across desktop, tablet, and mobile.
+            Automate multi-campus operations, minimize administrative overhead, and deliver a premium digital experience to administrators, teachers, and parents with our fully responsive SaaS solution.
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row lg:justify-start">
             <Link href="/login" className="inline-flex items-center justify-center rounded-2xl bg-sky-500 px-7 py-3 text-sm font-semibold text-slate-950 transition hover:bg-sky-400">
