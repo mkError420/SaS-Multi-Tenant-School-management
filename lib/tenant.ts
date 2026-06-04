@@ -17,8 +17,8 @@ export type Tenant = {
 const defaultTenants: Tenant[] = [
   {
     id: 'tenant_1',
-    name: 'Northstar Elementary',
-    slug: 'northstar-elementary',
+    name: 'Zass Elementary School',
+    slug: 'zass-elementary',
     city: 'Seattle',
     description: 'A modern elementary school with a focus on student wellness and STEAM education.',
     plan: 'Growth',
@@ -30,8 +30,8 @@ const defaultTenants: Tenant[] = [
   },
   {
     id: 'tenant_2',
-    name: 'Horizon High School',
-    slug: 'horizon-high',
+    name: 'Zass High School',
+    slug: 'zass-high',
     city: 'Austin',
     description: 'High school administration made easy, with attendance, courses, and reporting in one portal.',
     plan: 'Premium',
@@ -43,8 +43,8 @@ const defaultTenants: Tenant[] = [
   },
   {
     id: 'tenant_3',
-    name: 'Sunnyside Academy',
-    slug: 'sunnyside-academy',
+    name: 'Zass Middle School',
+    slug: 'zass-middle',
     city: 'Denver',
     description: 'A community-first school with strong support for families and teachers.',
     plan: 'Starter',
@@ -96,7 +96,7 @@ export async function getTenantBySlug(slug: string) {
     const db = await getDatabase();
     const tenant = await db.collection('tenants').findOne({ slug });
     if (!tenant) {
-      return null;
+      return defaultTenants.find((tenant) => tenant.slug === slug) ?? null;
     }
 
     return {
