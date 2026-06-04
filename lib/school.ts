@@ -186,6 +186,16 @@ const defaultParentPortal: ParentPortalData = {
   teacherContact: 'Mrs. Sofia Kim',
 };
 
+function tenantScopeQuery(tenantSlugOrId: string) {
+  // Support multiple possible tenant keys stored in DB:
+  // - tenantSlug (used by onboardTenant currently)
+  // - tenantId (common alternative)
+  // - slug (if tenant slug was stored under a generic field)
+  return {
+    $or: [{ tenantSlug: tenantSlugOrId }, { tenantId: tenantSlugOrId }, { slug: tenantSlugOrId }],
+  };
+}
+
 export async function getTenantStudents(tenantSlug: string) {
   if (!process.env.MONGODB_URI) {
     return defaultStudents;
@@ -193,7 +203,7 @@ export async function getTenantStudents(tenantSlug: string) {
 
   try {
     const db = await getDatabase();
-    return (await db.collection<Student>('students').find({ tenantSlug }).toArray()) as Student[];
+    return (await db.collection<Student>('students').find(tenantScopeQuery(tenantSlug)).toArray()) as Student[];
   } catch (error) {
     console.error('Failed to load tenant students:', error);
     return [];
@@ -207,7 +217,7 @@ export async function getTenantTeachers(tenantSlug: string) {
 
   try {
     const db = await getDatabase();
-    return (await db.collection<Teacher>('teachers').find({ tenantSlug }).toArray()) as Teacher[];
+    return (await db.collection<Teacher>('teachers').find(tenantScopeQuery(tenantSlug)).toArray()) as Teacher[];
   } catch (error) {
     console.error('Failed to load tenant teachers:', error);
     return [];
@@ -221,7 +231,7 @@ export async function getTenantSchedule(tenantSlug: string) {
 
   try {
     const db = await getDatabase();
-    return (await db.collection<ClassSchedule>('classes').find({ tenantSlug }).toArray()) as ClassSchedule[];
+    return (await db.collection<ClassSchedule>('classes').find(tenantScopeQuery(tenantSlug)).toArray()) as ClassSchedule[];
   } catch (error) {
     console.error('Failed to load tenant schedule:', error);
     return [];
@@ -235,7 +245,7 @@ export async function getTenantBilling(tenantSlug: string) {
 
   try {
     const db = await getDatabase();
-    return (await db.collection<BillingRecord>('billing').find({ tenantSlug }).toArray()) as BillingRecord[];
+    return (await db.collection<BillingRecord>('billing').find(tenantScopeQuery(tenantSlug)).toArray()) as BillingRecord[];
   } catch (error) {
     console.error('Failed to load tenant billing:', error);
     return [];
@@ -254,7 +264,7 @@ export async function getTenantAcademicSetup(tenantSlug: string) {
 
   try {
     const db = await getDatabase();
-    const result = await db.collection<AcademicSetup>('academicSetup').findOne({ tenantSlug });
+    const result = await db.collection<AcademicSetup>('academicSetup').findOne(tenantScopeQuery(tenantSlug));
     return result ?? defaultAcademicSetup;
   } catch (error) {
     console.error('Failed to load academic setup:', error);
@@ -269,7 +279,7 @@ export async function getTenantAdmissions(tenantSlug: string) {
 
   try {
     const db = await getDatabase();
-    return (await db.collection<EnrollmentApplication>('admissions').find({ tenantSlug }).toArray()) as EnrollmentApplication[];
+    return (await db.collection<EnrollmentApplication>('admissions').find(tenantScopeQuery(tenantSlug)).toArray()) as EnrollmentApplication[];
   } catch (error) {
     console.error('Failed to load admissions:', error);
     return defaultAdmissions;
@@ -283,7 +293,7 @@ export async function getTenantNoticeBoard(tenantSlug: string) {
 
   try {
     const db = await getDatabase();
-    return (await db.collection<Notice>('notices').find({ tenantSlug }).toArray()) as Notice[];
+    return (await db.collection<Notice>('notices').find(tenantScopeQuery(tenantSlug)).toArray()) as Notice[];
   } catch (error) {
     console.error('Failed to load notices:', error);
     return defaultNotices;
@@ -297,7 +307,7 @@ export async function getTeacherPortalData(tenantSlug: string) {
 
   try {
     const db = await getDatabase();
-    return (await db.collection<TeacherPortalData>('teacherPortal').findOne({ tenantSlug })) ?? defaultTeacherPortal;
+    return (await db.collection<TeacherPortalData>('teacherPortal').findOne(tenantScopeQuery(tenantSlug))) ?? defaultTeacherPortal;
   } catch (error) {
     console.error('Failed to load teacher portal data:', error);
     return defaultTeacherPortal;
@@ -311,7 +321,7 @@ export async function getStudentPortalData(tenantSlug: string) {
 
   try {
     const db = await getDatabase();
-    return (await db.collection<StudentPortalData>('studentPortal').findOne({ tenantSlug })) ?? defaultStudentPortal;
+    return (await db.collection<StudentPortalData>('studentPortal').findOne(tenantScopeQuery(tenantSlug))) ?? defaultStudentPortal;
   } catch (error) {
     console.error('Failed to load student portal data:', error);
     return defaultStudentPortal;
@@ -325,7 +335,7 @@ export async function getParentPortalData(tenantSlug: string) {
 
   try {
     const db = await getDatabase();
-    return (await db.collection<ParentPortalData>('parentPortal').findOne({ tenantSlug })) ?? defaultParentPortal;
+    return (await db.collection<ParentPortalData>('parentPortal').findOne(tenantScopeQuery(tenantSlug))) ?? defaultParentPortal;
   } catch (error) {
     console.error('Failed to load parent portal data:', error);
     return defaultParentPortal;
@@ -427,6 +437,25 @@ export async function onboardTenant(payload: OnboardTenantPayload) {
   await db.collection('teachers').insertOne(defaultTeacher);
   await db.collection('classes').insertOne(defaultClass);
   await db.collection('billing').insertOne(defaultInvoice);
+
+  // Provision additional tenant-scoped collections so the tenant dashboard
+  // works fully with persisted data (no demo fallbacks) right after onboarding.
+  await db.collection('academicSetup').insertOne({ tenantSlug: payload.slug, ...defaultAcademicSetup });
+  await db.collection('admissions').insertMany(
+    defaultAdmissions.map((app) => ({
+      ...app,
+      tenantSlug: payload.slug,
+    })),
+  );
+  await db.collection('notices').insertMany(
+    defaultNotices.map((notice) => ({
+      ...notice,
+      tenantSlug: payload.slug,
+    })),
+  );
+  await db.collection('teacherPortal').insertOne({ tenantSlug: payload.slug, ...defaultTeacherPortal });
+  await db.collection('studentPortal').insertOne({ tenantSlug: payload.slug, ...defaultStudentPortal });
+  await db.collection('parentPortal').insertOne({ tenantSlug: payload.slug, ...defaultParentPortal });
 
   // Also ensure the admin user exists for tenant.
   await signUpUser(payload.adminEmail, payload.adminPassword, payload.slug, 'admin');
