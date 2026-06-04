@@ -1,0 +1,64 @@
+import { createHash, randomUUID } from 'crypto';
+import { getDatabase } from './mongodb';
+
+export type User = {
+  id: string;
+  email: string;
+  tenantSlug: string;
+  role: 'admin' | 'teacher' | 'staff';
+  passwordHash: string;
+};
+
+export function hashPassword(password: string) {
+  return createHash('sha256').update(password).digest('hex');
+}
+
+export function verifyPassword(password: string, passwordHash: string) {
+  return hashPassword(password) === passwordHash;
+}
+
+export async function getUserByEmail(email: string) {
+  if (!process.env.MONGODB_URI) {
+    return null;
+  }
+
+  const db = await getDatabase();
+  return (await db.collection('users').findOne({ email })) as User | null;
+}
+
+export async function signUpUser(email: string, password: string, tenantSlug: string, role: 'admin' | 'teacher' | 'staff' = 'admin') {
+  if (!process.env.MONGODB_URI) {
+    throw new Error('MongoDB is not configured. User registration requires a database.');
+  }
+
+  const db = await getDatabase();
+  const existingUser = await db.collection('users').findOne({ email });
+  if (existingUser) {
+    throw new Error('A user with that email already exists.');
+  }
+
+  const user: User = {
+    id: randomUUID(),
+    email,
+    tenantSlug,
+    role,
+    passwordHash: hashPassword(password),
+  };
+
+  await db.collection('users').insertOne(user);
+  return user;
+}
+
+export async function signInUser(email: string, password: string) {
+  if (!process.env.MONGODB_URI) {
+    throw new Error('MongoDB is not configured. Authentication requires a database.');
+  }
+
+  const db = await getDatabase();
+  const user = (await db.collection('users').findOne({ email })) as User | null;
+  if (!user || !verifyPassword(password, user.passwordHash)) {
+    return null;
+  }
+
+  return user;
+}
