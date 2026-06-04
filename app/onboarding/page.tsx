@@ -9,7 +9,7 @@ export default function OnboardingPage() {
     name: '',
     slug: '',
     city: '',
-    plan: 'Starter',
+    plan: 'Basic',
     description: '',
     adminEmail: '',
     adminPassword: '',
@@ -73,9 +73,9 @@ export default function OnboardingPage() {
             <label className="block">
               <span className="text-sm font-semibold text-slate-200">Plan</span>
               <select name="plan" value={form.plan} onChange={handleChange} className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white">
+                <option>Basic</option>
                 <option>Starter</option>
-                <option>Growth</option>
-                <option>Premium</option>
+                <option>Advance</option>
               </select>
             </label>
           </div>

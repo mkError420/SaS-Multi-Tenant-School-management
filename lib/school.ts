@@ -131,9 +131,9 @@ const defaultBilling: BillingRecord[] = [
 ];
 
 const defaultPlans: PlanPackage[] = [
+  { id: 'plan-basic', name: 'Basic', description: 'Up to 200 students, core school tools, and essential support.', price: 29, studentLimit: 200 },
   { id: 'plan-starter', name: 'Starter', description: 'Up to 500 students, basic school tools, local support.', price: 49, studentLimit: 500 },
-  { id: 'plan-growth', name: 'Growth', description: 'Up to 1,500 students, reports, and enhanced communication.', price: 99, studentLimit: 1500 },
-  { id: 'plan-premium', name: 'Premium', description: 'Unlimited students, advanced analytics, and priority support.', price: 199, studentLimit: -1 },
+  { id: 'plan-advance', name: 'Advance', description: 'Up to 1,500 students, reports, and enhanced communication.', price: 99, studentLimit: 1500 },
 ];
 
 const defaultAcademicSetup: AcademicSetup = {

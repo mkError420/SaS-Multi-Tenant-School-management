@@ -51,7 +51,7 @@ export default async function HomePage() {
         <div className="flex flex-wrap items-center justify-between gap-6">
           <div>
             <p className="text-sm uppercase tracking-[0.3em] text-sky-400">Choose a school</p>
-            <h2 className="mt-3 text-3xl font-semibold text-white">Demo directory</h2>
+            <h2 className="mt-3 text-3xl font-semibold text-white">See details for each school</h2>
           </div>
           <p className="max-w-2xl text-sm leading-6 text-slate-400">
             Click a school to open its dedicated dashboard, and show how Zass "SaaS" school system keeps all data separate while providing a unified experience across schools.
