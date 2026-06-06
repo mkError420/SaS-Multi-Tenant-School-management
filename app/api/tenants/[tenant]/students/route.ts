@@ -44,6 +44,12 @@ export async function POST(
     const db = await getDatabase();
     const result = await db.collection('students').insertOne(studentDoc);
 
+    // Keep tenant dashboard (Overview) in sync.
+    // Overview reads `tenant.students` from the tenant document, so we must increment it here.
+    await db
+      .collection('tenants')
+      .updateOne({ slug: tenantObj.slug }, { $inc: { students: 1 } });
+
     return NextResponse.json(
       { ok: true, id: result.insertedId.toString(), student: studentDoc },
       { status: 201 },
