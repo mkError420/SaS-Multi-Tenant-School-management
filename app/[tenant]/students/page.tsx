@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { getTenantBySlug } from '../../../lib/tenant';
 import { getTenantStudents } from '../../../lib/school';
+import AddStudentModal from '../../../components/AddStudentModal';
 
 type Props = {
   params: {
@@ -24,9 +25,8 @@ export default async function StudentsPage({ params }: Props) {
           <h1 className="mt-3 text-3xl font-semibold text-white">Class roster</h1>
           <p className="mt-2 text-slate-400">Monitor student enrollment and active student status for {tenant.name}.</p>
         </div>
-        <button className="rounded-2xl bg-sky-500 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-sky-400">
-          Add student
-        </button>
+
+        <AddStudentModal tenantSlug={tenant.slug} />
       </div>
 
       <div className="mt-8 overflow-hidden rounded-3xl border border-slate-800 bg-slate-950">
