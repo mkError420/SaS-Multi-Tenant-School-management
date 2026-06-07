@@ -132,7 +132,7 @@ export default async function HomePage() {
             <h2 className="mt-3 text-3xl font-semibold text-white">Explore our demo setups</h2>
           </div>
           <p className="max-w-2xl text-sm leading-6 text-slate-400">
-            Try out these demo environments to see the platform's features in action.
+            Try out these demo environments to see the platform&apos;s features in action.
           </p>
         </div>
 
