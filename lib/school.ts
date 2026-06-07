@@ -10,6 +10,9 @@ export type Student = {
   grade: string;
   status: string;
   enrolled: string;
+  guardianName?: string;
+  guardianPhone?: string;
+  address?: string;
 };
 
 export type Teacher = {
@@ -212,10 +215,61 @@ export async function getTenantStudents(tenantSlug: string) {
       grade: r.grade,
       status: r.status,
       enrolled: r.enrolled,
+      guardianName: r.guardianName || '',
+      guardianPhone: r.guardianPhone || '',
+      address: r.address || '',
     })) as Student[];
   } catch (error) {
     console.error('Failed to load tenant students:', error);
     return [];
+  }
+}
+
+export async function createTenantStudent(tenantSlug: string, name: string, grade: string, status: string, enrolled: string, guardianName: string, guardianPhone: string, address: string) {
+  if (!process.env.MONGODB_URI) return false;
+  try {
+    const db = await getDatabase();
+    await db.collection('students').insertOne({
+      tenantSlug,
+      name,
+      grade,
+      status,
+      enrolled,
+      guardianName,
+      guardianPhone,
+      address,
+    });
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+export async function updateTenantStudent(tenantSlug: string, id: string, name: string, grade: string, status: string, enrolled: string, guardianName: string, guardianPhone: string, address: string) {
+  if (!process.env.MONGODB_URI) return false;
+  try {
+    const db = await getDatabase();
+    let query: any = { id, tenantSlug };
+    if (ObjectId.isValid(id)) query = { $or: [{ id, tenantSlug }, { _id: new ObjectId(id), tenantSlug }] };
+    
+    const result = await db.collection('students').updateOne(query, { $set: { name, grade, status, enrolled, guardianName, guardianPhone, address } });
+    return result.modifiedCount > 0;
+  } catch (error) {
+    return false;
+  }
+}
+
+export async function deleteTenantStudent(tenantSlug: string, id: string) {
+  if (!process.env.MONGODB_URI) return false;
+  try {
+    const db = await getDatabase();
+    let query: any = { id, tenantSlug };
+    if (ObjectId.isValid(id)) query = { $or: [{ id, tenantSlug }, { _id: new ObjectId(id), tenantSlug }] };
+
+    const result = await db.collection('students').deleteOne(query);
+    return result.deletedCount > 0;
+  } catch (error) {
+    return false;
   }
 }
 
@@ -491,6 +545,9 @@ export async function onboardTenant(payload: OnboardTenantPayload) {
     grade: '1',
     status: 'Active',
     enrolled: new Date().toISOString().split('T')[0],
+    guardianName: 'Sample Guardian',
+    guardianPhone: '+8801700000000',
+    address: payload.city,
   };
 
   const defaultTeacher = {

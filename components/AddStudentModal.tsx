@@ -7,6 +7,9 @@ export type AddStudentPayload = {
   grade: string;
   status?: string;
   enrolled?: string;
+  guardianName?: string;
+  guardianPhone?: string;
+  address?: string;
 };
 
 type Props = {
@@ -27,6 +30,9 @@ export default function AddStudentModal({ tenantSlug, ...props }: Props) {
   const [grade, setGrade] = useState('');
   const [status, setStatus] = useState('Active');
   const [enrolled, setEnrolled] = useState(() => todayISODate());
+  const [guardianName, setGuardianName] = useState('');
+  const [guardianPhone, setGuardianPhone] = useState('');
+  const [address, setAddress] = useState('');
 
   const canSubmit = useMemo(() => name.trim().length > 0 && grade.trim().length > 0, [name, grade]);
 
@@ -46,6 +52,9 @@ export default function AddStudentModal({ tenantSlug, ...props }: Props) {
             grade: grade.trim(),
             status: status?.trim() || 'Active',
             enrolled: enrolled?.trim() || todayISODate(),
+            guardianName: guardianName.trim(),
+            guardianPhone: guardianPhone.trim(),
+            address: address.trim(),
           } satisfies AddStudentPayload,
         ),
       });
@@ -68,6 +77,9 @@ export default function AddStudentModal({ tenantSlug, ...props }: Props) {
       setGrade('');
       setStatus('Active');
       setEnrolled(todayISODate());
+      setGuardianName('');
+      setGuardianPhone('');
+      setAddress('');
 
       // Trigger refresh from client (avoid passing function props from Server -> Client)
       window.location.reload();
@@ -124,6 +136,36 @@ export default function AddStudentModal({ tenantSlug, ...props }: Props) {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. John Doe"
+                  className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 focus:border-sky-500 focus:outline-none"
+                />
+              </label>
+
+              <label className="grid gap-2 text-sm text-slate-300">
+                Guardian Name
+                <input
+                  value={guardianName}
+                  onChange={(e) => setGuardianName(e.target.value)}
+                  placeholder="e.g. Jane Doe"
+                  className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 focus:border-sky-500 focus:outline-none"
+                />
+              </label>
+
+              <label className="grid gap-2 text-sm text-slate-300">
+                Guardian Phone
+                <input
+                  value={guardianPhone}
+                  onChange={(e) => setGuardianPhone(e.target.value)}
+                  placeholder="e.g. +8801700000000"
+                  className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 focus:border-sky-500 focus:outline-none"
+                />
+              </label>
+
+              <label className="grid gap-2 text-sm text-slate-300">
+                Address
+                <input
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="e.g. 123 Main St, City"
                   className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 focus:border-sky-500 focus:outline-none"
                 />
               </label>
