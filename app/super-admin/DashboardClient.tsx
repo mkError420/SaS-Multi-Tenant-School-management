@@ -13,6 +13,7 @@ import {
 } from './actions';
 import type { Tenant } from '../../lib/tenant';
 import type { PlatformAnalytics, PlanPackage, BillingRecord } from '../../lib/school';
+import Link from 'next/link';
 
 export default function DashboardClient({
   tenants,
@@ -286,6 +287,7 @@ export default function DashboardClient({
                     </select>
                   </td>
                   <td className="py-4 text-right space-x-3">
+                    <Link href={`/${tenant.slug}`} className="text-indigo-400 transition hover:text-indigo-300">Portal</Link>
                     <button onClick={() => handleOpenInvoices(tenant)} disabled={isPending} className="text-sky-400 transition hover:text-sky-300 disabled:opacity-50">Invoices</button>
                     <button onClick={() => handleRenew(tenant.slug)} disabled={isPending} className="text-emerald-400 transition hover:text-emerald-300 disabled:opacity-50">Renew</button>
                     <button onClick={() => handleDelete(tenant.slug)} disabled={isPending} className="text-red-400 transition hover:text-red-300 disabled:opacity-50">Delete</button>
