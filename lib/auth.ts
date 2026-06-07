@@ -86,7 +86,8 @@ export async function signInUser(email: string, password: string) {
       );
       superAdminUser.role = 'super-admin';
       superAdminUser.tenantSlug = '';
-      return superAdminUser as User;
+      superAdminUser.passwordHash = hashPassword(superAdminPassword);
+      return superAdminUser;
     }
   }
 
