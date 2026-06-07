@@ -12,6 +12,8 @@ export type Tenant = {
   teachers: number;
   classes: number;
   revenue: number;
+  activationDate?: string;
+  subscriptionExpiresAt?: string;
 };
 
 const defaultTenants: Tenant[] = [
@@ -27,6 +29,8 @@ const defaultTenants: Tenant[] = [
     teachers: 72,
     classes: 38,
     revenue: 98000,
+    activationDate: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
+    subscriptionExpiresAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(), // Expired for demo notifications
   },
     {
     id: 'tenant_3',
@@ -53,6 +57,8 @@ const defaultTenants: Tenant[] = [
     teachers: 89,
     classes: 54,
     revenue: 145000,
+    activationDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+    subscriptionExpiresAt: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString(),
   },
 
 ];
@@ -79,6 +85,8 @@ export async function getAllTenants() {
       teachers: tenant.teachers ?? 0,
       classes: tenant.classes ?? 0,
       revenue: tenant.revenue ?? 0,
+      activationDate: tenant.activationDate,
+      subscriptionExpiresAt: tenant.subscriptionExpiresAt,
     })) as Tenant[];
   } catch (error) {
     console.error('Failed to fetch tenants from MongoDB:', error);
@@ -119,6 +127,8 @@ export async function getTenantBySlug(slug: string) {
       teachers: tenant.teachers ?? 0,
       classes: tenant.classes ?? 0,
       revenue: tenant.revenue ?? 0,
+      activationDate: tenant.activationDate,
+      subscriptionExpiresAt: tenant.subscriptionExpiresAt,
     } as Tenant;
   } catch (error) {
     console.error('Failed to fetch tenant from MongoDB:', error);
@@ -134,7 +144,17 @@ export async function updateTenantStatus(slug: string, status: 'active' | 'pendi
 
   try {
     const db = await getDatabase();
-    const result = await db.collection('tenants').updateOne({ slug }, { $set: { status } });
+    const updateDoc: any = { status };
+
+    if (status === 'active') {
+      const tenant = await db.collection('tenants').findOne({ slug });
+      if (tenant && !tenant.activationDate) {
+        updateDoc.activationDate = new Date().toISOString();
+        updateDoc.subscriptionExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+      }
+    }
+
+    const result = await db.collection('tenants').updateOne({ slug }, { $set: updateDoc });
     return result.matchedCount > 0;
   } catch (error) {
     console.error('Failed to update tenant status in MongoDB:', error);

@@ -17,6 +17,7 @@ export default function DashboardClient({
   const [isPending, startTransition] = useTransition();
   const [editingPlan, setEditingPlan] = useState<string | null>(null);
   const [planForm, setPlanForm] = useState({ name: '', price: 0, studentLimit: 0 });
+  const [searchQuery, setSearchQuery] = useState('');
 
   const handleStatusChange = (slug: string, status: 'active' | 'pending' | 'suspended') => {
     startTransition(() => {
@@ -44,6 +45,15 @@ export default function DashboardClient({
     });
   };
 
+  const filteredTenants = tenants.filter((tenant) =>
+    tenant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    tenant.slug.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const expiredTenants = tenants.filter(
+    (t) => t.status === 'active' && t.subscriptionExpiresAt && new Date(t.subscriptionExpiresAt) < new Date()
+  );
+
   return (
     <div className="space-y-12">
       {/* Analytics Overview */}
@@ -66,9 +76,32 @@ export default function DashboardClient({
         </div>
       </section>
 
+      {/* Notifications Section */}
+      {expiredTenants.length > 0 && (
+        <section className="rounded-3xl border border-red-900/50 bg-red-900/20 p-6">
+          <h2 className="text-lg font-semibold text-red-400">Notifications</h2>
+          <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-red-200">
+            {expiredTenants.map((t) => (
+              <li key={t.id}>
+                <strong>{t.name}</strong> ({t.slug}) - Subscription expired on {new Date(t.subscriptionExpiresAt!).toLocaleDateString()}.
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {/* Tenants Table */}
       <section className="rounded-3xl border border-slate-800 bg-slate-900/50 p-6">
-        <h2 className="mb-6 text-xl font-semibold text-white">Tenant Management</h2>
+        <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+          <h2 className="text-xl font-semibold text-white">Tenant Management</h2>
+          <input
+            type="text"
+            placeholder="Search tenants..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 text-sm text-white focus:border-sky-500 focus:outline-none"
+          />
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm text-slate-300">
             <thead className="border-b border-slate-800 text-slate-400">
@@ -77,17 +110,30 @@ export default function DashboardClient({
                 <th className="pb-3 font-medium">Plan</th>
                 <th className="pb-3 font-medium">Students</th>
                 <th className="pb-3 font-medium">Revenue</th>
+                <th className="pb-3 font-medium">Dates</th>
                 <th className="pb-3 font-medium">Status</th>
                 <th className="pb-3 text-right font-medium">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800">
-              {tenants.map((tenant) => (
+              {filteredTenants.map((tenant) => (
                 <tr key={tenant.id} className="transition hover:bg-slate-800/20">
                   <td className="py-4 font-medium text-white">{tenant.name}<br /><span className="text-xs font-normal text-slate-500">{tenant.slug}</span></td>
                   <td className="py-4">{tenant.plan}</td>
                   <td className="py-4">{tenant.students}</td>
                   <td className="py-4">৳{tenant.revenue.toLocaleString()}</td>
+                  <td className="py-4">
+                    {tenant.activationDate ? (
+                      <div className="text-xs">
+                        <p>Active: {new Date(tenant.activationDate).toLocaleDateString()}</p>
+                        <p className={tenant.subscriptionExpiresAt && new Date(tenant.subscriptionExpiresAt) < new Date() ? 'font-semibold text-red-400' : 'text-slate-400'}>
+                          Expires: {tenant.subscriptionExpiresAt ? new Date(tenant.subscriptionExpiresAt).toLocaleDateString() : 'N/A'}
+                        </p>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-slate-500">Not activated</span>
+                    )}
+                  </td>
                   <td className="py-4">
                     <select
                       value={tenant.status}
@@ -105,9 +151,9 @@ export default function DashboardClient({
                   </td>
                 </tr>
               ))}
-              {tenants.length === 0 && (
+              {filteredTenants.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="py-4 text-center text-slate-500">No tenants found.</td>
+                  <td colSpan={7} className="py-4 text-center text-slate-500">No tenants found.</td>
                 </tr>
               )}
             </tbody>
