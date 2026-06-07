@@ -36,6 +36,8 @@ export default function DashboardClient({
   const [loadingInvoices, setLoadingInvoices] = useState(false);
   const [newInvoiceForm, setNewInvoiceForm] = useState({ label: '', amount: 0, due: '' });
 
+  const [viewTenant, setViewTenant] = useState<Tenant | null>(null);
+
   const [revenueMonth, setRevenueMonth] = useState((new Date().getMonth() + 1).toString().padStart(2, '0'));
   const [revenueYear, setRevenueYear] = useState(new Date().getFullYear().toString());
 
@@ -279,6 +281,74 @@ export default function DashboardClient({
     printWindow.document.close();
   };
 
+  const handleDownloadTenantsCSV = () => {
+    const headers = ['School Name', 'Slug', 'City', 'Plan', 'Status', 'Students', 'Revenue', 'Activation Date', 'Expiry Date'];
+    const rows = filteredTenants.map(t => [
+      `"${t.name}"`,
+      `"${t.slug}"`,
+      `"${t.city}"`,
+      `"${t.plan}"`,
+      `"${t.status}"`,
+      t.students,
+      t.revenue,
+      t.activationDate ? `"${new Date(t.activationDate).toLocaleDateString()}"` : '"N/A"',
+      t.subscriptionExpiresAt ? `"${new Date(t.subscriptionExpiresAt).toLocaleDateString()}"` : '"N/A"'
+    ]);
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `tenants_export_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handlePrintTenantsPDF = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('Please allow pop-ups to print the report.');
+      return;
+    }
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Tenants Report</title>
+          <style>
+            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 40px; color: #1e293b; max-width: 1000px; margin: 0 auto; }
+            .header { border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 20px; text-align: center; }
+            .title { font-size: 24px; font-weight: bold; color: #0ea5e9; margin: 0; }
+            .subtitle { color: #64748b; font-size: 14px; margin-top: 5px; }
+            .table { border-collapse: collapse; width: 100%; margin-top: 20px; font-size: 12px; }
+            .table th, .table td { border-bottom: 1px solid #e2e8f0; padding: 8px; text-align: left; }
+            .table th { background-color: #f8fafc; font-weight: 600; color: #475569; }
+            .table tr:nth-child(even) { background-color: #f8fafc; }
+            @media print { body { padding: 0; } @page { margin: 1cm; size: landscape; } }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1 class="title">TENANTS REPORT</h1>
+            <p class="subtitle">Generated on: ${new Date().toLocaleDateString()}</p>
+          </div>
+          <table class="table">
+            <thead><tr><th>School Name</th><th>Slug</th><th>City</th><th>Plan</th><th>Students</th><th>Revenue</th><th>Status</th></tr></thead>
+            <tbody>
+              ${filteredTenants.map(t => `<tr><td><strong>${t.name}</strong></td><td>${t.slug}</td><td>${t.city}</td><td>${t.plan}</td><td>${t.students}</td><td>&#2547;${t.revenue.toLocaleString()}</td><td style="text-transform: uppercase; font-weight: bold; color: ${t.status === 'active' ? '#10b981' : (t.status === 'pending' ? '#f59e0b' : '#ef4444')};">${t.status}</td></tr>`).join('')}
+              ${filteredTenants.length === 0 ? '<tr><td colSpan="7" style="text-align: center; color: #94a3b8;">No tenants found.</td></tr>' : ''}
+            </tbody>
+          </table>
+          <script>window.onload = () => { setTimeout(() => { window.print(); }, 300); }</script>
+        </body>
+      </html>
+    `;
+    printWindow.document.open();
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
+
   return (
     <div className="space-y-12">
       {/* Analytics Overview */}
@@ -339,7 +409,13 @@ export default function DashboardClient({
       {/* Tenants Table */}
       <section className="rounded-3xl border border-slate-800 bg-slate-900/50 p-6">
         <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-          <h2 className="text-xl font-semibold text-white">Tenant Management</h2>
+          <div className="flex flex-wrap items-center gap-4">
+            <h2 className="text-xl font-semibold text-white">Tenant Management</h2>
+            <div className="flex items-center gap-2">
+              <button onClick={handleDownloadTenantsCSV} className="rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-semibold text-sky-400 transition hover:bg-slate-700">Export CSV</button>
+              <button onClick={handlePrintTenantsPDF} className="rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-semibold text-sky-400 transition hover:bg-slate-700">Print PDF</button>
+            </div>
+          </div>
           <input
             type="text"
             placeholder="Search tenants..."
@@ -393,6 +469,12 @@ export default function DashboardClient({
                     </select>
                   </td>
                   <td className="py-4 text-right space-x-3">
+                    <button onClick={() => setViewTenant(tenant)} className="text-slate-400 transition hover:text-white" title="View Details">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="inline-block h-5 w-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                      </svg>
+                    </button>
                     <Link href={`/${tenant.slug}`} className="text-indigo-400 transition hover:text-indigo-300">Portal</Link>
                     <button onClick={() => handleOpenInvoices(tenant)} disabled={isPending} className="text-sky-400 transition hover:text-sky-300 disabled:opacity-50">Invoices</button>
                     <button onClick={() => handleRenew(tenant.slug)} disabled={isPending} className="text-emerald-400 transition hover:text-emerald-300 disabled:opacity-50">Renew</button>
@@ -521,6 +603,75 @@ export default function DashboardClient({
                 </table>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Tenant Details Modal */}
+      {viewTenant && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-soft">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-800 pb-4">
+              <div>
+                <h2 className="text-2xl font-semibold text-white">Tenant Details</h2>
+                <p className="mt-1 text-sm text-slate-400">{viewTenant.name}</p>
+              </div>
+              <button onClick={() => setViewTenant(null)} className="rounded-full bg-slate-800 p-2 text-slate-400 hover:bg-slate-700 hover:text-white">✕</button>
+            </div>
+            <div className="mt-6 grid gap-6 sm:grid-cols-2">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">School Name</p>
+                <p className="mt-1 text-sm text-white">{viewTenant.name}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Tenant Slug</p>
+                <p className="mt-1 text-sm text-white">{viewTenant.slug}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Authority Name</p>
+                <p className="mt-1 text-sm text-white">{viewTenant.authorityName || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Phone Number</p>
+                <p className="mt-1 text-sm text-white">{viewTenant.phone || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">City</p>
+                <p className="mt-1 text-sm text-white">{viewTenant.city}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Status</p>
+                <p className={`mt-1 text-sm font-semibold uppercase tracking-wider ${viewTenant.status === 'active' ? 'text-emerald-400' : viewTenant.status === 'pending' ? 'text-amber-400' : 'text-rose-400'}`}>{viewTenant.status}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Subscription Plan</p>
+                <p className="mt-1 text-sm text-white">{viewTenant.plan}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Revenue</p>
+                <p className="mt-1 text-sm text-white">৳{viewTenant.revenue.toLocaleString()}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Students</p>
+                <p className="mt-1 text-sm text-white">{viewTenant.students}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Teachers</p>
+                <p className="mt-1 text-sm text-white">{viewTenant.teachers}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Activation Date</p>
+                <p className="mt-1 text-sm text-white">{viewTenant.activationDate ? new Date(viewTenant.activationDate).toLocaleDateString() : 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Expiry Date</p>
+                <p className="mt-1 text-sm text-white">{viewTenant.subscriptionExpiresAt ? new Date(viewTenant.subscriptionExpiresAt).toLocaleDateString() : 'N/A'}</p>
+              </div>
+              <div className="col-span-full">
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Description</p>
+                <p className="mt-1 text-sm text-slate-300">{viewTenant.description || 'N/A'}</p>
+              </div>
+            </div>
           </div>
         </div>
       )}
