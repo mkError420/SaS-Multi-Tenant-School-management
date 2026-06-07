@@ -55,20 +55,31 @@ export async function signInUser(email: string, password: string) {
   }
 
   const db = await getDatabase();
-  let user = (await db.collection('users').findOne({ email })) as User | null;
+  
+  // 1. Auto-provision the primary Super Admin into the database
   const superAdminEmail = 'mk.rabbani.cse@gmail.com';
   const superAdminPassword = 'nobinislam420';
 
-  if (!user && email === superAdminEmail && password === superAdminPassword) {
-    user = {
+  let superAdminUser = await db.collection('users').findOne({ email: superAdminEmail });
+  if (!superAdminUser) {
+    const newSuperAdmin: User = {
       id: randomUUID(),
-      email,
+      email: superAdminEmail,
       tenantSlug: '',
       role: 'super-admin',
-      passwordHash: hashPassword(password),
+      passwordHash: hashPassword(superAdminPassword),
     };
-    await db.collection('users').insertOne(user);
+    await db.collection('users').insertOne(newSuperAdmin);
+  } else if (superAdminUser.role !== 'super-admin') {
+    // Self-healing: Ensure they definitely have super-admin privileges
+    await db.collection('users').updateOne(
+      { email: superAdminEmail },
+      { $set: { role: 'super-admin', tenantSlug: '' } }
+    );
   }
+
+  // 2. Authenticate the requested user
+  const user = (await db.collection('users').findOne({ email })) as User | null;
 
   if (!user || !verifyPassword(password, user.passwordHash)) {
     return null;
