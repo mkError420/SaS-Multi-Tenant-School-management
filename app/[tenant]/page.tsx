@@ -1,89 +1,90 @@
-import Link from 'next/link';
-import { notFound } from 'next/navigation';
 import { getTenantBySlug } from '../../lib/tenant';
+import { getTenantStudents, getTenantTeachers, getTenantSchedule, getTenantNoticeBoard, getTenantBilling } from '../../lib/school';
+import { notFound } from 'next/navigation';
 
-type Props = {
-  params: {
-    tenant: string;
-  };
-};
+export const dynamic = 'force-dynamic';
 
-export default async function TenantDashboard({ params }: Props) {
+export default async function TenantDashboardPage({ params }: { params: { tenant: string } }) {
   const tenant = await getTenantBySlug(params.tenant);
+  if (!tenant) notFound();
 
-  if (!tenant) {
-    notFound();
-  }
+  const students = await getTenantStudents(params.tenant);
+  const teachers = await getTenantTeachers(params.tenant);
+  const schedule = await getTenantSchedule(params.tenant);
+  const notices = await getTenantNoticeBoard(params.tenant);
+  const billing = await getTenantBilling(params.tenant);
 
-  const stats = [
-    { label: 'Students', value: tenant.students, accent: 'bg-sky-500/15 text-sky-300' },
-    { label: 'Teachers', value: tenant.teachers, accent: 'bg-emerald-500/15 text-emerald-300' },
-    { label: 'Classes', value: tenant.classes, accent: 'bg-violet-500/15 text-violet-300' },
-  ];
+  // Dynamically calculate fees that are strictly marked as 'unpaid' or 'pending'
+  const pendingDue = billing.reduce((acc, curr) => curr.status !== 'paid' ? acc + curr.amount : acc, 0);
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-10 lg:px-8">
-      <header className="space-y-6 rounded-3xl border border-slate-800 bg-slate-900/90 p-8 shadow-soft">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm uppercase tracking-[0.35em] text-sky-400">Tenant portal</p>
-            <h1 className="mt-3 text-4xl font-semibold text-white">{tenant.name}</h1>
-            <p className="mt-3 max-w-2xl text-slate-400">{tenant.description}</p>
-          </div>
-          <Link href="/" className="inline-flex items-center justify-center rounded-2xl bg-slate-800 px-5 py-3 text-sm font-semibold text-slate-100 transition hover:bg-slate-700">
-            Back to home
-          </Link>
+    <div className="space-y-8">
+      <section className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-3xl border border-slate-800 bg-slate-900/50 p-6 shadow-soft">
+          <p className="text-sm font-medium text-slate-400">Total Students</p>
+          <p className="mt-2 text-3xl font-semibold text-white">{students.length}</p>
         </div>
-
-        <div className="grid gap-4 sm:grid-cols-3">
-          {stats.map((item) => (
-            <div key={item.label} className={`rounded-3xl border border-slate-800 p-6 ${item.accent}`}>
-              <p className="text-sm uppercase tracking-[0.25em] text-slate-300">{item.label}</p>
-              <p className="mt-4 text-3xl font-semibold text-white">{item.value}</p>
-            </div>
-          ))}
+        <div className="rounded-3xl border border-slate-800 bg-slate-900/50 p-6 shadow-soft">
+          <p className="text-sm font-medium text-slate-400">Total Teachers</p>
+          <p className="mt-2 text-3xl font-semibold text-white">{teachers.length}</p>
         </div>
-      </header>
-
-      <section className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {[
-          { title: 'Students', description: 'Review rosters, attendance, and enrollment data.', href: `/${tenant.slug}/students`, accent: 'bg-sky-500/10 text-sky-300' },
-          { title: 'Teachers', description: 'View teachers, assignments, and contact details.', href: `/${tenant.slug}/teachers`, accent: 'bg-emerald-500/10 text-emerald-300' },
-          { title: 'Billing', description: 'Track invoices, payments, and outstanding balances.', href: `/${tenant.slug}/billing`, accent: 'bg-violet-500/10 text-violet-300' },
-        ].map((card) => (
-          <article key={card.title} className="rounded-3xl border border-slate-800 bg-slate-900/80 p-8 shadow-soft">
-            <div className={`rounded-3xl ${card.accent} p-4 text-sm font-semibold`}>{card.title}</div>
-            <p className="mt-6 text-slate-400">{card.description}</p>
-            <Link href={card.href} className="mt-6 inline-flex text-sm font-semibold text-slate-200 underline decoration-slate-600 hover:text-white">
-              Open {card.title.toLowerCase()}
-            </Link>
-          </article>
-        ))}
+        <div className="rounded-3xl border border-slate-800 bg-slate-900/50 p-6 shadow-soft">
+          <p className="text-sm font-medium text-slate-400">Classes Scheduled</p>
+          <p className="mt-2 text-3xl font-semibold text-white">{schedule.length}</p>
+        </div>
+        <div className="rounded-3xl border border-slate-800 bg-slate-900/50 p-6 shadow-soft">
+          <p className="text-sm font-medium text-slate-400">Outstanding Fees</p>
+          <p className="mt-2 text-3xl font-semibold text-amber-400">৳{pendingDue.toLocaleString()}</p>
+        </div>
       </section>
 
-      <section className="mt-10 grid gap-6 lg:grid-cols-2">
-        <article className="rounded-3xl border border-slate-800 bg-slate-900/80 p-8 shadow-soft">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="text-sm uppercase tracking-[0.25em] text-sky-400">Tenant settings</p>
-              <h2 className="mt-3 text-xl font-semibold text-white">School configuration</h2>
-            </div>
-            <Link href={`/${tenant.slug}/settings`} className="rounded-full bg-sky-500/10 px-4 py-2 text-sm font-semibold text-sky-300 transition hover:bg-sky-500/20">
-              Open settings
-            </Link>
+      <div className="grid gap-8 lg:grid-cols-2">
+        {/* Dynamic Notice Board */}
+        <section className="rounded-3xl border border-slate-800 bg-slate-900/50 p-6 shadow-soft">
+          <h2 className="mb-6 text-xl font-semibold text-white">Notice Board</h2>
+          <div className="space-y-6">
+            {notices.length > 0 ? notices.map(notice => (
+              <div key={notice.id} className="border-b border-slate-800 pb-6 last:border-0 last:pb-0">
+                <h3 className="font-medium text-white">{notice.title}</h3>
+                <p className="mt-1 text-xs text-sky-400">{new Date(notice.date).toLocaleDateString()} • {notice.audience}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-400">{notice.message}</p>
+              </div>
+            )) : <p className="text-sm text-slate-500">No notices posted.</p>}
           </div>
-          <div className="mt-6 grid gap-4">
-            <div className="rounded-3xl bg-slate-950/80 p-5">
-              <p className="text-sm text-slate-500">Current plan</p>
-              <p className="mt-2 text-lg font-semibold text-white">{tenant.plan}</p>
-            </div>
-            <div className="rounded-3xl bg-slate-950/80 p-5">
-              <p className="text-sm text-slate-500">Campus location</p>
-              <p className="mt-2 text-lg font-semibold text-white">{tenant.city}</p>
-            </div>
+        </section>
+
+        {/* Recent Students Feed */}
+        <section className="rounded-3xl border border-slate-800 bg-slate-900/50 p-6 shadow-soft">
+          <h2 className="mb-6 text-xl font-semibold text-white">Recent Enrollments</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm text-slate-300">
+              <thead className="border-b border-slate-800 text-slate-400">
+                <tr>
+                  <th className="pb-3 font-medium">Name</th>
+                  <th className="pb-3 font-medium">Grade</th>
+                  <th className="pb-3 text-right font-medium">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800">
+                {students.slice(0, 5).map(student => (
+                  <tr key={student.id}>
+                    <td className="py-4 text-white">{student.name}</td>
+                    <td className="py-4">{student.grade}</td>
+                    <td className="py-4 text-right">
+                      <span className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${student.status.toLowerCase() === 'active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-slate-800 text-slate-400'}`}>
+                        {student.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+                {students.length === 0 && (
+                  <tr><td colSpan={3} className="py-6 text-center text-slate-500">No students found.</td></tr>
+                )}
+              </tbody>
+            </table>
           </div>
-        </article>
-      </section>
-    </main>
+        </section>
+      </div>
+    </div>
   );
 }
