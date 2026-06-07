@@ -80,23 +80,34 @@ export async function getAllTenants() {
     const db = await getDatabase();
     const tenants = await db.collection('tenants').find().toArray();
 
-    return tenants.map((tenant: any) => ({
-      id: tenant._id.toString(),
-      name: tenant.name,
-      slug: tenant.slug,
-      city: tenant.city,
-      description: tenant.description,
-      plan: tenant.plan,
-      status: tenant.status ?? 'active',
-      students: tenant.students ?? 0,
-      teachers: tenant.teachers ?? 0,
-      classes: tenant.classes ?? 0,
-      revenue: tenant.revenue ?? 0,
-      activationDate: tenant.activationDate,
-      subscriptionExpiresAt: tenant.subscriptionExpiresAt,
-      phone: tenant.phone,
-      authorityName: tenant.authorityName,
-    })) as Tenant[];
+    const tenantsWithCounts = await Promise.all(
+      tenants.map(async (tenant: any) => {
+        // Fetch dynamic real-time counts straight from the students collection
+        const studentCount = await db.collection('students').countDocuments({
+          $or: [{ tenantSlug: tenant.slug }, { tenantId: tenant.slug }, { slug: tenant.slug }]
+        });
+
+        return {
+          id: tenant._id.toString(),
+          name: tenant.name,
+          slug: tenant.slug,
+          city: tenant.city,
+          description: tenant.description,
+          plan: tenant.plan,
+          status: tenant.status ?? 'active',
+          students: studentCount, // Dynamically synced with School Administration Portal
+          teachers: tenant.teachers ?? 0,
+          classes: tenant.classes ?? 0,
+          revenue: tenant.revenue ?? 0,
+          activationDate: tenant.activationDate,
+          subscriptionExpiresAt: tenant.subscriptionExpiresAt,
+          phone: tenant.phone,
+          authorityName: tenant.authorityName,
+        };
+      })
+    );
+
+    return tenantsWithCounts as Tenant[];
   } catch (error) {
     console.error('Failed to fetch tenants from MongoDB:', error);
     // Avoid returning demo tenants when Mongo is configured but failing.
@@ -124,6 +135,11 @@ export async function getTenantBySlug(slug: string) {
       return null;
     }
 
+    // Fetch dynamic real-time counts straight from the students collection
+    const studentCount = await db.collection('students').countDocuments({
+      $or: [{ tenantSlug: tenant.slug }, { tenantId: tenant.slug }, { slug: tenant.slug }]
+    });
+
     return {
       id: tenant._id.toString(),
       name: tenant.name,
@@ -132,7 +148,7 @@ export async function getTenantBySlug(slug: string) {
       description: tenant.description,
       plan: tenant.plan,
       status: tenant.status ?? 'active',
-      students: tenant.students ?? 0,
+      students: studentCount, // Dynamically synced with School Administration Portal
       teachers: tenant.teachers ?? 0,
       classes: tenant.classes ?? 0,
       revenue: tenant.revenue ?? 0,
@@ -182,7 +198,27 @@ export async function deleteTenant(slug: string) {
   try {
     const db = await getDatabase();
     const result = await db.collection('tenants').deleteOne({ slug });
-    await db.collection('users').deleteMany({ tenantSlug: slug });
+    
+    // Create a scope query to catch all possible ways the tenant data might be tied
+    const tenantScope = {
+      $or: [{ tenantSlug: slug }, { tenantId: slug }, { slug: slug }]
+    };
+
+    // Cascade delete all associated tenant data concurrently
+    await Promise.all([
+      db.collection('users').deleteMany({ tenantSlug: slug }),
+      db.collection('students').deleteMany(tenantScope),
+      db.collection('teachers').deleteMany(tenantScope),
+      db.collection('classes').deleteMany(tenantScope),
+      db.collection('billing').deleteMany(tenantScope),
+      db.collection('academicSetup').deleteMany(tenantScope),
+      db.collection('admissions').deleteMany(tenantScope),
+      db.collection('notices').deleteMany(tenantScope),
+      db.collection('teacherPortal').deleteMany(tenantScope),
+      db.collection('studentPortal').deleteMany(tenantScope),
+      db.collection('parentPortal').deleteMany(tenantScope),
+    ]);
+
     return result.deletedCount > 0;
   } catch (error) {
     console.error('Failed to delete tenant:', error);

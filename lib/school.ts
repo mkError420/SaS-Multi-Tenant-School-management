@@ -38,6 +38,7 @@ export type BillingRecord = {
   amount: number;
   due: string;
   status: 'paid' | 'unpaid' | 'pending';
+  tenantSlug?: string;
 };
 
 export type PlanPackage = {
@@ -130,9 +131,9 @@ const defaultSchedule: ClassSchedule[] = [
 ];
 
 const defaultBilling: BillingRecord[] = [
-  { id: 'billing-1', label: 'Tuition support', amount: 8200, due: '2026-06-30', status: 'pending' },
-  { id: 'billing-2', label: 'Technology services', amount: 3200, due: '2026-06-20', status: 'paid' },
-  { id: 'billing-3', label: 'Athletics lease', amount: 1750, due: '2026-07-05', status: 'unpaid' },
+  { id: 'billing-1', label: 'Tuition support', amount: 8200, due: '2026-06-30', status: 'pending', tenantSlug: 'demo-tenant' },
+  { id: 'billing-2', label: 'Technology services', amount: 3200, due: '2026-06-20', status: 'paid', tenantSlug: 'demo-tenant' },
+  { id: 'billing-3', label: 'Athletics lease', amount: 1750, due: '2026-07-05', status: 'unpaid', tenantSlug: 'demo-tenant' },
 ];
 
 const defaultPlans: PlanPackage[] = [
@@ -478,6 +479,28 @@ export async function getParentPortalData(tenantSlug: string) {
   }
 }
 
+export async function getAllBillingRecords() {
+  if (!process.env.MONGODB_URI) {
+    return defaultBilling;
+  }
+
+  try {
+    const db = await getDatabase();
+    const records = await db.collection('billing').find().toArray();
+    return records.map((r: any) => ({
+      id: r._id.toString(),
+      tenantSlug: r.tenantSlug || 'N/A',
+      label: r.label,
+      amount: r.amount,
+      due: r.due,
+      status: r.status,
+    })) as BillingRecord[];
+  } catch (error) {
+    console.error('Failed to load all billing:', error);
+    return [];
+  }
+}
+
 export async function getPlatformAnalytics() {
   const tenants = await getAllTenants();
   const totalStudents = tenants.reduce((sum, tenant) => sum + tenant.students, 0);
@@ -531,9 +554,9 @@ export async function onboardTenant(payload: OnboardTenantPayload) {
     description: payload.description,
     plan: payload.plan,
     status: 'pending' as const,
-    students: 0,
-    teachers: 0,
-    classes: 0,
+    students: 1,
+    teachers: 1,
+    classes: 1,
     revenue: selectedPlan ? selectedPlan.price : 0,
     phone: payload.phone,
     authorityName: payload.authorityName,

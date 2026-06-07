@@ -19,10 +19,12 @@ export default function DashboardClient({
   tenants,
   analytics,
   plans,
+  billingRecords = [],
 }: {
   tenants: Tenant[];
   analytics: PlatformAnalytics;
   plans: PlanPackage[];
+  billingRecords?: BillingRecord[];
 }) {
   const [isPending, startTransition] = useTransition();
   const [editingPlan, setEditingPlan] = useState<string | null>(null);
@@ -33,6 +35,9 @@ export default function DashboardClient({
   const [invoices, setInvoices] = useState<BillingRecord[]>([]);
   const [loadingInvoices, setLoadingInvoices] = useState(false);
   const [newInvoiceForm, setNewInvoiceForm] = useState({ label: '', amount: 0, due: '' });
+
+  const [revenueMonth, setRevenueMonth] = useState((new Date().getMonth() + 1).toString().padStart(2, '0'));
+  const [revenueYear, setRevenueYear] = useState(new Date().getFullYear().toString());
 
   const handleStatusChange = (slug: string, status: 'active' | 'pending' | 'suspended') => {
     startTransition(() => {
@@ -194,13 +199,114 @@ export default function DashboardClient({
     (t) => t.status === 'active' && t.subscriptionExpiresAt && new Date(t.subscriptionExpiresAt) < new Date()
   );
 
+  const filteredRevenueRecords = (billingRecords || []).filter(b => {
+    if (!b.due) return false;
+
+    // Ensure the tenant still exists (exclude deleted tenants from the report)
+    const tenantExists = tenants.some(t => t.slug === b.tenantSlug);
+    if (!tenantExists) return false;
+
+    const date = new Date(b.due);
+    const m = (date.getMonth() + 1).toString().padStart(2, '0');
+    const y = date.getFullYear().toString();
+    return m === revenueMonth && y === revenueYear;
+  });
+
+  const totalCollected = filteredRevenueRecords.filter(b => b.status === 'paid').reduce((sum, b) => sum + b.amount, 0);
+  const totalExpected = filteredRevenueRecords.reduce((sum, b) => sum + b.amount, 0);
+
+  const handlePrintRevenue = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('Please allow pop-ups to print the report.');
+      return;
+    }
+
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const monthName = monthNames[parseInt(revenueMonth) - 1];
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Revenue Report - ${monthName} ${revenueYear}</title>
+          <style>
+            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 40px; color: #1e293b; max-width: 800px; margin: 0 auto; }
+            .header { border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 20px; text-align: center; }
+            .title { font-size: 24px; font-weight: bold; color: #0ea5e9; margin: 0; }
+            .subtitle { color: #64748b; font-size: 14px; margin-top: 5px; }
+            .table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+            .table th, .table td { border-bottom: 1px solid #e2e8f0; padding: 10px; text-align: left; font-size: 14px; }
+            .table th { background-color: #f8fafc; font-weight: 600; color: #475569; }
+            .table tr:nth-child(even) { background-color: #f8fafc; }
+            .summary { margin-top: 30px; text-align: right; font-size: 16px; color: #0f172a; }
+            .summary strong { color: #10b981; font-size: 20px; }
+            @media print { body { padding: 0; } @page { margin: 1cm; } }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1 class="title">MONTHLY REVENUE REPORT</h1>
+            <p class="subtitle">Period: ${monthName} ${revenueYear}</p>
+          </div>
+          <table class="table">
+            <thead>
+              <tr><th>Tenant (School)</th><th>Description</th><th>Due Date</th><th>Status</th><th style="text-align: right;">Amount</th></tr>
+            </thead>
+            <tbody>
+              ${filteredRevenueRecords.map(b => `
+                <tr>
+                  <td>${b.tenantSlug || 'N/A'}</td>
+                  <td>${b.label}</td>
+                  <td>${b.due}</td>
+                  <td style="color: ${b.status === 'paid' ? '#10b981' : (b.status === 'pending' ? '#f59e0b' : '#ef4444')}; text-transform: uppercase; font-size: 12px; font-weight: bold;">${b.status}</td>
+                  <td style="text-align: right;">&#2547;${b.amount.toLocaleString()}</td>
+                </tr>
+              `).join('')}
+              ${filteredRevenueRecords.length === 0 ? '<tr><td colSpan="5" style="text-align: center; color: #94a3b8;">No records found for this period.</td></tr>' : ''}
+            </tbody>
+          </table>
+          <div class="summary">
+            <p>Total Billed: &#2547;${totalExpected.toLocaleString()}</p>
+            <p><strong>Total Collected: &#2547;${totalCollected.toLocaleString()}</strong></p>
+          </div>
+          <script>window.onload = () => { setTimeout(() => { window.print(); }, 300); }</script>
+        </body>
+      </html>
+    `;
+    printWindow.document.open();
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
+
   return (
     <div className="space-y-12">
       {/* Analytics Overview */}
       <section className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-3xl border border-slate-800 bg-slate-900/50 p-6">
-          <p className="text-sm font-medium text-slate-400">Total Revenue</p>
-          <p className="mt-2 text-3xl font-semibold text-white">৳{analytics.totalRevenue.toLocaleString()}</p>
+        <div className="rounded-3xl border border-slate-800 bg-slate-900/50 p-6 flex flex-col justify-between col-span-full sm:col-span-2 lg:col-span-1">
+          <div>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-sm font-medium text-slate-400">Monthly Revenue</p>
+              <div className="flex gap-1">
+                <select value={revenueMonth} onChange={e => setRevenueMonth(e.target.value)} className="bg-slate-950 text-xs border border-slate-700 rounded px-1 py-0.5 text-slate-300 focus:border-sky-500 focus:outline-none">
+                  {Array.from({ length: 12 }).map((_, i) => (
+                    <option key={i} value={(i + 1).toString().padStart(2, '0')}>{(i + 1).toString().padStart(2, '0')}</option>
+                  ))}
+                </select>
+                <select value={revenueYear} onChange={e => setRevenueYear(e.target.value)} className="bg-slate-950 text-xs border border-slate-700 rounded px-1 py-0.5 text-slate-300 focus:border-sky-500 focus:outline-none">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <option key={i} value={(new Date().getFullYear() - 1 + i).toString()}>{(new Date().getFullYear() - 1 + i).toString()}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <p className="mt-2 text-3xl font-semibold text-emerald-400">৳{totalCollected.toLocaleString()}</p>
+            <p className="mt-1 text-xs text-slate-500">Billed: ৳{totalExpected.toLocaleString()}</p>
+          </div>
+          <button onClick={handlePrintRevenue} className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-sky-400 hover:text-sky-300">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+            Print Report
+          </button>
         </div>
         <div className="rounded-3xl border border-slate-800 bg-slate-900/50 p-6">
           <p className="text-sm font-medium text-slate-400">Active Schools</p>
