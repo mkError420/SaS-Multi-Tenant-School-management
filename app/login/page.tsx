@@ -26,9 +26,9 @@ export default function LoginPage() {
     try {
       const result = await loginAction(form.email, form.password);
       
-      if (result.error) {
+      if ('error' in result) {
         setMessage(result.error);
-      } else {
+      } else if (result.success) {
         setMessage('Login successful. Redirecting...');
         // Redirect based on the user's role and associated tenant
         if (result.user?.role === 'super-admin') {
@@ -39,8 +39,9 @@ export default function LoginPage() {
           router.push('/');
         }
       }
-    } catch (error: any) {
-      setMessage(error.message || 'An unexpected error occurred during login.');
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'An unexpected error occurred during login.';
+      setMessage(msg);
     }
 
     setLoading(false);

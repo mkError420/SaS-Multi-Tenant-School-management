@@ -3,7 +3,11 @@
 import { signInUser } from '../../lib/auth';
 import { cookies } from 'next/headers';
 
-export async function loginAction(email: string, password: string) {
+export type LoginResponse = 
+  | { success: true; user: { id: string; email: string; role: string; tenantSlug: string } }
+  | { error: string };
+
+export async function loginAction(email: string, password: string): Promise<LoginResponse> {
   if (!email || !password) {
     return { error: 'Email and password are required.' };
   }
@@ -30,7 +34,7 @@ export async function loginAction(email: string, password: string) {
     });
 
     return { success: true, user: safeUser };
-  } catch (error: any) {
-    return { error: error.message || 'Internal server error' };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : 'Internal server error' };
   }
 }

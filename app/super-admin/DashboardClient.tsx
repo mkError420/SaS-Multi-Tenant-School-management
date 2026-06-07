@@ -137,7 +137,7 @@ export default function DashboardClient({
                   <td className="py-4">
                     <select
                       value={tenant.status}
-                      onChange={(e) => handleStatusChange(tenant.slug, e.target.value as any)}
+                      onChange={(e) => handleStatusChange(tenant.slug, e.target.value as 'active' | 'pending' | 'suspended')}
                       disabled={isPending}
                       className="rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-sm text-white focus:border-sky-500 focus:outline-none disabled:opacity-50"
                     >
