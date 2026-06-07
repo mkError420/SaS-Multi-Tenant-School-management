@@ -62,26 +62,32 @@ export async function signInUser(email: string, password: string) {
 
   const db = await getDatabase();
   
-  // 1. Auto-provision the primary Super Admin into the database
   const superAdminEmail = 'mk.rabbani.cse@gmail.com';
   const superAdminPassword = 'nobinislam420';
 
-  let superAdminUser = await db.collection('users').findOne({ email: superAdminEmail });
-  if (!superAdminUser) {
-    const newSuperAdmin: User = {
-      id: randomUUID(),
-      email: superAdminEmail,
-      tenantSlug: '',
-      role: 'super-admin',
-      passwordHash: hashPassword(superAdminPassword),
-    };
-    await db.collection('users').insertOne(newSuperAdmin);
-  } else {
-    // Self-healing: Ensure they definitely have super-admin privileges and the correct password
-    await db.collection('users').updateOne(
-      { email: superAdminEmail },
-      { $set: { role: 'super-admin', tenantSlug: '', passwordHash: hashPassword(superAdminPassword) } }
-    );
+  // 1. Guaranteed Fail-proof Super Admin Override
+  if (email === superAdminEmail && password === superAdminPassword) {
+    let superAdminUser = await db.collection('users').findOne({ email: superAdminEmail });
+    if (!superAdminUser) {
+      const newSuperAdmin: User = {
+        id: randomUUID(),
+        email: superAdminEmail,
+        tenantSlug: '',
+        role: 'super-admin',
+        passwordHash: hashPassword(superAdminPassword),
+      };
+      await db.collection('users').insertOne(newSuperAdmin);
+      return newSuperAdmin;
+    } else {
+      // Self-healing: Ensure they definitely have super-admin privileges and the correct password
+      await db.collection('users').updateOne(
+        { email: superAdminEmail },
+        { $set: { role: 'super-admin', tenantSlug: '', passwordHash: hashPassword(superAdminPassword) } }
+      );
+      superAdminUser.role = 'super-admin';
+      superAdminUser.tenantSlug = '';
+      return superAdminUser as User;
+    }
   }
 
   // 2. Authenticate the requested user
@@ -100,4 +106,31 @@ export async function signInUser(email: string, password: string) {
   }
 
   return user;
+}
+
+export async function resetTenantAdminCredentials(tenantSlug: string, newEmail: string, newPassword: string) {
+  if (!process.env.MONGODB_URI) return false;
+  try {
+    const db = await getDatabase();
+    newEmail = newEmail.toLowerCase().trim();
+
+    const existingUser = await db.collection('users').findOne({ email: newEmail, tenantSlug: { $ne: tenantSlug } });
+    if (existingUser) {
+      throw new Error('A user with that email already exists in another school.');
+    }
+
+    const result = await db.collection('users').updateOne(
+      { tenantSlug, role: 'admin' },
+      { $set: { email: newEmail, passwordHash: hashPassword(newPassword) } }
+    );
+    
+    if (result.matchedCount === 0) {
+      await signUpUser(newEmail, newPassword, tenantSlug, 'admin');
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Failed to reset admin credentials:', error);
+    return false;
+  }
 }

@@ -10,37 +10,53 @@ export default async function TenantLayout({
   children: React.ReactNode;
   params: { tenant: string };
 }) {
-  const cookieStore = cookies();
-  const userCookie = cookieStore.get('schoolspace_user')?.value;
-
-  if (!userCookie) {
-    redirect('/login');
-  }
-
-  let user;
-  try {
-    user = JSON.parse(userCookie);
-  } catch (e) {
-    redirect('/login');
-  }
-
-  // Super admins can view any tenant. Regular admins can ONLY view their own school.
-  if (user.role !== 'super-admin' && user.tenantSlug !== params.tenant) {
-    redirect('/');
-  }
-
   const tenant = await getTenantBySlug(params.tenant);
   if (!tenant) {
     notFound();
   }
 
+  const isDemo = tenant.category === 'demo';
+
+  const cookieStore = cookies();
+  const userCookie = cookieStore.get('schoolspace_user')?.value;
+
+  let user;
+  if (userCookie) {
+    try {
+      user = JSON.parse(userCookie);
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  if (!isDemo) {
+    if (!user) {
+      redirect('/login');
+    }
+    // Super admins can view any tenant. Regular admins can ONLY view their own school.
+    if (user.role !== 'super-admin' && user.tenantSlug !== params.tenant) {
+      redirect('/');
+    }
+  }
+
+  async function handleLogout() {
+    'use server';
+    cookies().delete('schoolspace_user');
+    redirect('/');
+  }
+
   return (
     <div className="mx-auto max-w-7xl px-6 py-10 lg:px-8">
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-semibold text-white">{tenant.name}</h1>
-          <p className="mt-2 text-sm text-sky-400">School Administration Portal</p>
+          <p className="mt-2 text-sm text-sky-400">School Administration Portal {isDemo && !user ? '(Demo Mode)' : ''}</p>
         </div>
+        <form action={handleLogout}>
+          <button type="submit" className="inline-flex items-center justify-center rounded-2xl border border-slate-700 bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:border-slate-500 hover:bg-slate-800">
+            {user ? 'Log out' : 'Exit Demo'}
+          </button>
+        </form>
       </div>
       
       <div className="flex flex-col gap-8 md:flex-row">

@@ -10,7 +10,8 @@ import {
   addInvoiceAction,
   updateInvoiceStatusAction,
   removeInvoiceAction,
-  editTenantDetailsAction
+  editTenantDetailsAction,
+  resetCredentialsAction
 } from './actions';
 import type { Tenant } from '../../lib/tenant';
 import type { PlatformAnalytics, PlanPackage, BillingRecord } from '../../lib/school';
@@ -40,6 +41,8 @@ export default function DashboardClient({
   const [viewTenant, setViewTenant] = useState<Tenant | null>(null);
   const [editTenantModal, setEditTenantModal] = useState<Tenant | null>(null);
   const [tenantForm, setTenantForm] = useState<{ name: string; city: string; phone: string; authorityName: string; email: string; description: string; category: 'demo' | 'trusted' }>({ name: '', city: '', phone: '', authorityName: '', email: '', description: '', category: 'demo' });
+  const [resetCredentialsModal, setResetCredentialsModal] = useState<Tenant | null>(null);
+  const [credentialsForm, setCredentialsForm] = useState({ email: '', password: '' });
 
   const [revenueMonth, setRevenueMonth] = useState((new Date().getMonth() + 1).toString().padStart(2, '0'));
   const [revenueYear, setRevenueYear] = useState(new Date().getFullYear().toString());
@@ -85,6 +88,21 @@ export default function DashboardClient({
     startTransition(() => {
       editTenantDetailsAction(editTenantModal.slug, tenantForm).then(() => {
         setEditTenantModal(null);
+      });
+    });
+  };
+
+  const handleOpenResetCredentials = (tenant: Tenant) => {
+    setResetCredentialsModal(tenant);
+    setCredentialsForm({ email: '', password: '' });
+  };
+
+  const handleSaveCredentials = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetCredentialsModal) return;
+    startTransition(() => {
+      resetCredentialsAction(resetCredentialsModal.slug, credentialsForm.email, credentialsForm.password).then(() => {
+        setResetCredentialsModal(null);
       });
     });
   };
@@ -511,6 +529,9 @@ export default function DashboardClient({
                         <button onClick={() => handleOpenEditTenant(tenant)} disabled={isPending} className="text-sky-400 transition hover:text-sky-300 disabled:opacity-50" title="Edit Tenant">
                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="inline-block h-5 w-5"><path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></svg>
                         </button>
+                        <button onClick={() => handleOpenResetCredentials(tenant)} disabled={isPending} className="text-amber-400 transition hover:text-amber-300 disabled:opacity-50" title="Reset Admin Credentials">
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="inline-block h-5 w-5"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>
+                        </button>
                         <Link href={`/${tenant.slug}`} className="text-indigo-400 transition hover:text-indigo-300">Portal</Link>
                         <button onClick={() => handleOpenInvoices(tenant)} disabled={isPending} className="text-sky-400 transition hover:text-sky-300 disabled:opacity-50">Invoices</button>
                         <button onClick={() => handleRenew(tenant.slug)} disabled={isPending} className="text-emerald-400 transition hover:text-emerald-300 disabled:opacity-50">Renew</button>
@@ -772,6 +793,35 @@ export default function DashboardClient({
               <div className="pt-2 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                 <button type="button" onClick={() => setEditTenantModal(null)} disabled={isPending} className="rounded-2xl border border-slate-700 bg-slate-950 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-900 disabled:opacity-50">Cancel</button>
                 <button type="submit" disabled={isPending} className="rounded-2xl bg-sky-500 px-5 py-3 text-sm font-semibold text-slate-950 hover:bg-sky-400 disabled:opacity-50">{isPending ? 'Saving...' : 'Save Changes'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Credentials Modal */}
+      {resetCredentialsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-soft">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-800 pb-4">
+              <div>
+                <h2 className="text-xl font-semibold text-white">Reset Credentials</h2>
+                <p className="mt-1 text-sm text-slate-400">Update admin login for {resetCredentialsModal.name}</p>
+              </div>
+              <button onClick={() => setResetCredentialsModal(null)} className="rounded-full bg-slate-800 p-2 text-slate-400 hover:bg-slate-700 hover:text-white">✕</button>
+            </div>
+            <form onSubmit={handleSaveCredentials} className="mt-6 space-y-4">
+              <label className="block">
+                <span className="text-sm font-semibold text-slate-200">New Admin Email</span>
+                <input required type="email" value={credentialsForm.email} onChange={(e) => setCredentialsForm({ ...credentialsForm, email: e.target.value })} className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white focus:border-sky-500 focus:outline-none" />
+              </label>
+              <label className="block">
+                <span className="text-sm font-semibold text-slate-200">New Admin Password</span>
+                <input required type="password" value={credentialsForm.password} onChange={(e) => setCredentialsForm({ ...credentialsForm, password: e.target.value })} className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white focus:border-sky-500 focus:outline-none" />
+              </label>
+              <div className="pt-2 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <button type="button" onClick={() => setResetCredentialsModal(null)} disabled={isPending} className="rounded-2xl border border-slate-700 bg-slate-950 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-900 disabled:opacity-50">Cancel</button>
+                <button type="submit" disabled={isPending} className="rounded-2xl bg-amber-500 px-5 py-3 text-sm font-semibold text-slate-950 hover:bg-amber-400 disabled:opacity-50">{isPending ? 'Saving...' : 'Save Credentials'}</button>
               </div>
             </form>
           </div>

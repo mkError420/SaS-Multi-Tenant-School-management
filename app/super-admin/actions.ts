@@ -2,7 +2,10 @@
 
 import { updateTenantStatus, deleteTenant, renewTenantSubscription, updateTenantDetails } from '../../lib/tenant';
 import { updatePlan, getTenantBilling, createTenantInvoice, updateTenantInvoice, deleteTenantInvoice } from '../../lib/school';
+import { resetTenantAdminCredentials } from '../../lib/auth';
 import { revalidatePath } from 'next/cache';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 
 export async function setTenantStatus(slug: string, status: 'active' | 'pending' | 'suspended') {
   await updateTenantStatus(slug, status);
@@ -47,5 +50,15 @@ export async function updateInvoiceStatusAction(id: string, status: 'paid' | 'un
 
 export async function removeInvoiceAction(id: string) {
   await deleteTenantInvoice(id);
+  revalidatePath('/super-admin');
+}
+
+export async function logoutAction() {
+  cookies().delete('schoolspace_user');
+  redirect('/login');
+}
+
+export async function resetCredentialsAction(slug: string, email: string, password: string) {
+  await resetTenantAdminCredentials(slug, email, password);
   revalidatePath('/super-admin');
 }

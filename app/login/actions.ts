@@ -21,10 +21,10 @@ export async function loginAction(email: string, password: string): Promise<Logi
 
     // Remove sensitive data (passwordHash) and non-serializable Mongo _id
     const safeUser = {
-      id: user.id,
+      id: user.id || (user as any)._id?.toString() || 'admin-id',
       email: user.email,
       role: user.role,
-      tenantSlug: user.tenantSlug,
+      tenantSlug: user.tenantSlug || '',
     };
 
     cookies().set('schoolspace_user', JSON.stringify(safeUser), {
