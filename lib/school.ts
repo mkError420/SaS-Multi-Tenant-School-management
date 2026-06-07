@@ -530,6 +530,7 @@ export type OnboardTenantPayload = {
   adminPassword: string;
   phone: string;
   authorityName: string;
+  email: string;
 };
 
 export async function onboardTenant(payload: OnboardTenantPayload) {
@@ -560,6 +561,7 @@ export async function onboardTenant(payload: OnboardTenantPayload) {
     revenue: selectedPlan ? selectedPlan.price : 0,
     phone: payload.phone,
     authorityName: payload.authorityName,
+    email: payload.email,
   };
 
   const defaultStudent = {

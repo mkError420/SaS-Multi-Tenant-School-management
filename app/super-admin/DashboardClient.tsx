@@ -9,7 +9,8 @@ import {
   fetchInvoicesAction,
   addInvoiceAction,
   updateInvoiceStatusAction,
-  removeInvoiceAction
+  removeInvoiceAction,
+  editTenantDetailsAction
 } from './actions';
 import type { Tenant } from '../../lib/tenant';
 import type { PlatformAnalytics, PlanPackage, BillingRecord } from '../../lib/school';
@@ -37,6 +38,8 @@ export default function DashboardClient({
   const [newInvoiceForm, setNewInvoiceForm] = useState({ label: '', amount: 0, due: '' });
 
   const [viewTenant, setViewTenant] = useState<Tenant | null>(null);
+  const [editTenantModal, setEditTenantModal] = useState<Tenant | null>(null);
+  const [tenantForm, setTenantForm] = useState({ name: '', city: '', phone: '', authorityName: '', email: '', description: '' });
 
   const [revenueMonth, setRevenueMonth] = useState((new Date().getMonth() + 1).toString().padStart(2, '0'));
   const [revenueYear, setRevenueYear] = useState(new Date().getFullYear().toString());
@@ -61,6 +64,28 @@ export default function DashboardClient({
         renewTenantSubscriptionAction(slug);
       });
     }
+  };
+
+  const handleOpenEditTenant = (tenant: Tenant) => {
+    setEditTenantModal(tenant);
+    setTenantForm({
+      name: tenant.name,
+      city: tenant.city,
+      phone: tenant.phone || '',
+      authorityName: tenant.authorityName || '',
+      email: tenant.email || '',
+      description: tenant.description || '',
+    });
+  };
+
+  const handleSaveTenantDetails = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editTenantModal) return;
+    startTransition(() => {
+      editTenantDetailsAction(editTenantModal.slug, tenantForm).then(() => {
+        setEditTenantModal(null);
+      });
+    });
   };
 
   const handleOpenInvoices = async (tenant: Tenant) => {
@@ -475,6 +500,11 @@ export default function DashboardClient({
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
                       </svg>
                     </button>
+                    <button onClick={() => handleOpenEditTenant(tenant)} disabled={isPending} className="text-sky-400 transition hover:text-sky-300 disabled:opacity-50" title="Edit Tenant">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="inline-block h-5 w-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                      </svg>
+                    </button>
                     <Link href={`/${tenant.slug}`} className="text-indigo-400 transition hover:text-indigo-300">Portal</Link>
                     <button onClick={() => handleOpenInvoices(tenant)} disabled={isPending} className="text-sky-400 transition hover:text-sky-300 disabled:opacity-50">Invoices</button>
                     <button onClick={() => handleRenew(tenant.slug)} disabled={isPending} className="text-emerald-400 transition hover:text-emerald-300 disabled:opacity-50">Renew</button>
@@ -632,6 +662,10 @@ export default function DashboardClient({
                 <p className="mt-1 text-sm text-white">{viewTenant.authorityName || 'N/A'}</p>
               </div>
               <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">School Email</p>
+                <p className="mt-1 text-sm text-white">{viewTenant.email || 'N/A'}</p>
+              </div>
+              <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Phone Number</p>
                 <p className="mt-1 text-sm text-white">{viewTenant.phone || 'N/A'}</p>
               </div>
@@ -672,6 +706,55 @@ export default function DashboardClient({
                 <p className="mt-1 text-sm text-slate-300">{viewTenant.description || 'N/A'}</p>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Tenant Modal */}
+      {editTenantModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-soft">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-800 pb-4">
+              <div>
+                <h2 className="text-2xl font-semibold text-white">Edit Tenant</h2>
+                <p className="mt-1 text-sm text-slate-400">Update details for {editTenantModal.name}</p>
+              </div>
+              <button onClick={() => setEditTenantModal(null)} className="rounded-full bg-slate-800 p-2 text-slate-400 hover:bg-slate-700 hover:text-white">✕</button>
+            </div>
+            <form onSubmit={handleSaveTenantDetails} className="mt-6 space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="block">
+                  <span className="text-sm font-semibold text-slate-200">School Name</span>
+                  <input required type="text" value={tenantForm.name} onChange={(e) => setTenantForm({ ...tenantForm, name: e.target.value })} className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white focus:border-sky-500 focus:outline-none" />
+                </label>
+                <label className="block">
+                  <span className="text-sm font-semibold text-slate-200">City</span>
+                  <input required type="text" value={tenantForm.city} onChange={(e) => setTenantForm({ ...tenantForm, city: e.target.value })} className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white focus:border-sky-500 focus:outline-none" />
+                </label>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="block">
+                  <span className="text-sm font-semibold text-slate-200">Authority Name</span>
+                  <input required type="text" value={tenantForm.authorityName} onChange={(e) => setTenantForm({ ...tenantForm, authorityName: e.target.value })} className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white focus:border-sky-500 focus:outline-none" />
+                </label>
+                <label className="block">
+                  <span className="text-sm font-semibold text-slate-200">Phone Number</span>
+                  <input required type="text" value={tenantForm.phone} onChange={(e) => setTenantForm({ ...tenantForm, phone: e.target.value })} className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white focus:border-sky-500 focus:outline-none" />
+                </label>
+              </div>
+              <label className="block">
+                <span className="text-sm font-semibold text-slate-200">School Email</span>
+                <input required type="email" value={tenantForm.email} onChange={(e) => setTenantForm({ ...tenantForm, email: e.target.value })} className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white focus:border-sky-500 focus:outline-none" />
+              </label>
+              <label className="block">
+                <span className="text-sm font-semibold text-slate-200">Description</span>
+                <textarea required rows={3} value={tenantForm.description} onChange={(e) => setTenantForm({ ...tenantForm, description: e.target.value })} className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white focus:border-sky-500 focus:outline-none" />
+              </label>
+              <div className="pt-2 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <button type="button" onClick={() => setEditTenantModal(null)} disabled={isPending} className="rounded-2xl border border-slate-700 bg-slate-950 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-900 disabled:opacity-50">Cancel</button>
+                <button type="submit" disabled={isPending} className="rounded-2xl bg-sky-500 px-5 py-3 text-sm font-semibold text-slate-950 hover:bg-sky-400 disabled:opacity-50">{isPending ? 'Saving...' : 'Save Changes'}</button>
+              </div>
+            </form>
           </div>
         </div>
       )}

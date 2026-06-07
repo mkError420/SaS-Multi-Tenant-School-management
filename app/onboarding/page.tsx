@@ -16,6 +16,7 @@ export default function OnboardingPage() {
     adminPassword: '',
     phone: '',
     authorityName: '',
+    email: '',
   });
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -94,14 +95,19 @@ export default function OnboardingPage() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block">
+              <span className="text-sm font-semibold text-slate-200">School email</span>
+              <input name="email" type="email" value={form.email} onChange={handleChange} required className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white" />
+            </label>
+            <label className="block">
               <span className="text-sm font-semibold text-slate-200">Phone number</span>
               <input name="phone" value={form.phone} onChange={handleChange} required className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white" />
             </label>
-            <label className="block">
-              <span className="text-sm font-semibold text-slate-200">Authority name</span>
-              <input name="authorityName" value={form.authorityName} onChange={handleChange} required className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white" />
-            </label>
           </div>
+
+          <label className="block">
+            <span className="text-sm font-semibold text-slate-200">Authority name</span>
+            <input name="authorityName" value={form.authorityName} onChange={handleChange} required className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white" />
+          </label>
 
           <label className="block">
             <span className="text-sm font-semibold text-slate-200">Description</span>

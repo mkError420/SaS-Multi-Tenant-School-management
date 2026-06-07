@@ -16,6 +16,7 @@ export type Tenant = {
   subscriptionExpiresAt?: string;
   phone?: string;
   authorityName?: string;
+  email?: string;
 };
 
 const defaultTenants: Tenant[] = [
@@ -35,6 +36,7 @@ const defaultTenants: Tenant[] = [
     subscriptionExpiresAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(), // Expired for demo notifications
     phone: '+8801700000001',
     authorityName: 'Mr. Anisur Rahman',
+    email: 'contact@zass-elementary.edu',
   },
     {
     id: 'tenant_3',
@@ -50,6 +52,7 @@ const defaultTenants: Tenant[] = [
     revenue: 47000,
     phone: '+8801700000002',
     authorityName: 'Ms. Farhana Haque',
+    email: 'info@zass-middle.edu',
   },
   {
     id: 'tenant_2',
@@ -67,6 +70,7 @@ const defaultTenants: Tenant[] = [
     subscriptionExpiresAt: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString(),
     phone: '+8801700000003',
     authorityName: 'Dr. Kamal Hossain',
+    email: 'admin@zass-high.edu',
   },
 ];
 
@@ -103,6 +107,7 @@ export async function getAllTenants() {
           subscriptionExpiresAt: tenant.subscriptionExpiresAt,
           phone: tenant.phone,
           authorityName: tenant.authorityName,
+          email: tenant.email,
         };
       })
     );
@@ -156,6 +161,7 @@ export async function getTenantBySlug(slug: string) {
       subscriptionExpiresAt: tenant.subscriptionExpiresAt,
       phone: tenant.phone,
       authorityName: tenant.authorityName,
+      email: tenant.email,
     } as Tenant;
   } catch (error) {
     console.error('Failed to fetch tenant from MongoDB:', error);
@@ -187,6 +193,20 @@ export async function updateTenantStatus(slug: string, status: 'active' | 'pendi
     return result.matchedCount > 0;
   } catch (error) {
     console.error('Failed to update tenant status in MongoDB:', error);
+    return false;
+  }
+}
+
+export async function updateTenantDetails(slug: string, payload: { name: string; city: string; description: string; phone: string; authorityName: string; email: string }) {
+  if (!process.env.MONGODB_URI) {
+    return false;
+  }
+  try {
+    const db = await getDatabase();
+    const result = await db.collection('tenants').updateOne({ slug }, { $set: payload });
+    return result.matchedCount > 0;
+  } catch (error) {
+    console.error('Failed to update tenant details:', error);
     return false;
   }
 }

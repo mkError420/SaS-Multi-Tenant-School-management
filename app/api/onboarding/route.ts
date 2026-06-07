@@ -4,9 +4,9 @@ import { onboardTenant } from '../../../lib/school';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, slug, city, description, plan, adminEmail, adminPassword, phone, authorityName } = body;
+    const { name, slug, city, description, plan, adminEmail, adminPassword, phone, authorityName, email } = body;
 
-    if (!name || !slug || !adminEmail || !adminPassword || !phone || !authorityName) {
+    if (!name || !slug || !adminEmail || !adminPassword || !phone || !authorityName || !email) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -20,6 +20,7 @@ export async function POST(request: Request) {
       adminPassword,
       phone,
       authorityName,
+      email,
     });
 
     return NextResponse.json(tenant, { status: 201 });
