@@ -14,6 +14,8 @@ export type Tenant = {
   revenue: number;
   activationDate?: string;
   subscriptionExpiresAt?: string;
+  phone?: string;
+  authorityName?: string;
 };
 
 const defaultTenants: Tenant[] = [
@@ -31,6 +33,8 @@ const defaultTenants: Tenant[] = [
     revenue: 98000,
     activationDate: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
     subscriptionExpiresAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(), // Expired for demo notifications
+    phone: '+8801700000001',
+    authorityName: 'Mr. Anisur Rahman',
   },
     {
     id: 'tenant_3',
@@ -44,6 +48,8 @@ const defaultTenants: Tenant[] = [
     teachers: 56,
     classes: 27,
     revenue: 47000,
+    phone: '+8801700000002',
+    authorityName: 'Ms. Farhana Haque',
   },
   {
     id: 'tenant_2',
@@ -59,8 +65,9 @@ const defaultTenants: Tenant[] = [
     revenue: 145000,
     activationDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
     subscriptionExpiresAt: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString(),
+    phone: '+8801700000003',
+    authorityName: 'Dr. Kamal Hossain',
   },
-
 ];
 
 export async function getAllTenants() {
@@ -87,6 +94,8 @@ export async function getAllTenants() {
       revenue: tenant.revenue ?? 0,
       activationDate: tenant.activationDate,
       subscriptionExpiresAt: tenant.subscriptionExpiresAt,
+      phone: tenant.phone,
+      authorityName: tenant.authorityName,
     })) as Tenant[];
   } catch (error) {
     console.error('Failed to fetch tenants from MongoDB:', error);
@@ -129,6 +138,8 @@ export async function getTenantBySlug(slug: string) {
       revenue: tenant.revenue ?? 0,
       activationDate: tenant.activationDate,
       subscriptionExpiresAt: tenant.subscriptionExpiresAt,
+      phone: tenant.phone,
+      authorityName: tenant.authorityName,
     } as Tenant;
   } catch (error) {
     console.error('Failed to fetch tenant from MongoDB:', error);

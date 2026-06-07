@@ -2,6 +2,7 @@
 
 import { useState, ChangeEvent, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -13,6 +14,8 @@ export default function OnboardingPage() {
     description: '',
     adminEmail: '',
     adminPassword: '',
+    phone: '',
+    authorityName: '',
   });
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -49,9 +52,18 @@ export default function OnboardingPage() {
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-14 lg:px-8">
-      <div className="rounded-3xl border border-slate-800 bg-slate-900/95 p-10 shadow-soft">
-        <h1 className="text-3xl font-semibold text-white">Tenant onboarding</h1>
-        <p className="mt-3 text-slate-400">Create a new school tenant and the first admin account for your multi-tenant SaaS environment.</p>
+      <div className="relative rounded-3xl border border-slate-800 bg-slate-900/95 p-10 shadow-soft">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-semibold text-white">Tenant onboarding</h1>
+            <p className="mt-3 text-slate-400">Create a new school tenant and the first admin account for your multi-tenant SaaS environment.</p>
+          </div>
+          <Link href="/super-admin" title="Close" className="rounded-full p-2 text-slate-400 transition hover:bg-slate-800 hover:text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </Link>
+        </div>
 
         <form onSubmit={handleSubmit} className="mt-10 space-y-6">
           <div className="grid gap-4 sm:grid-cols-2">
@@ -77,6 +89,17 @@ export default function OnboardingPage() {
                 <option>Starter</option>
                 <option>Advance</option>
               </select>
+            </label>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="block">
+              <span className="text-sm font-semibold text-slate-200">Phone number</span>
+              <input name="phone" value={form.phone} onChange={handleChange} required className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white" />
+            </label>
+            <label className="block">
+              <span className="text-sm font-semibold text-slate-200">Authority name</span>
+              <input name="authorityName" value={form.authorityName} onChange={handleChange} required className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white" />
             </label>
           </div>
 
