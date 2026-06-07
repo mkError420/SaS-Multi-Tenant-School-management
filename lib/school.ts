@@ -1,4 +1,5 @@
 import { getDatabase } from './mongodb';
+import { ObjectId } from 'mongodb';
 import { getAllTenants } from './tenant';
 import { Tenant } from './tenant';
 import { signUpUser } from './auth';
@@ -245,7 +246,14 @@ export async function getTenantBilling(tenantSlug: string) {
 
   try {
     const db = await getDatabase();
-    return (await db.collection<BillingRecord>('billing').find(tenantScopeQuery(tenantSlug)).toArray()) as BillingRecord[];
+    const records = await db.collection('billing').find(tenantScopeQuery(tenantSlug)).toArray();
+    return records.map((r: any) => ({
+      id: r.id || r._id.toString(),
+      label: r.label,
+      amount: r.amount,
+      due: r.due,
+      status: r.status,
+    })) as BillingRecord[];
   } catch (error) {
     console.error('Failed to load tenant billing:', error);
     return [];
@@ -515,4 +523,49 @@ export async function onboardTenant(payload: OnboardTenantPayload) {
     ...tenant,
     id: insertResult.insertedId.toString(),
   } as Tenant & { id: string };
+}
+
+export async function createTenantInvoice(tenantSlug: string, label: string, amount: number, due: string) {
+  if (!process.env.MONGODB_URI) return false;
+  try {
+    const db = await getDatabase();
+    await db.collection('billing').insertOne({
+      tenantSlug,
+      label,
+      amount,
+      due,
+      status: 'pending',
+    });
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+export async function updateTenantInvoice(id: string, status: 'paid' | 'unpaid' | 'pending') {
+  if (!process.env.MONGODB_URI) return false;
+  try {
+    const db = await getDatabase();
+    let query: any = { id };
+    if (ObjectId.isValid(id)) query = { $or: [{ id }, { _id: new ObjectId(id) }] };
+    
+    const result = await db.collection('billing').updateOne(query, { $set: { status } });
+    return result.modifiedCount > 0;
+  } catch (error) {
+    return false;
+  }
+}
+
+export async function deleteTenantInvoice(id: string) {
+  if (!process.env.MONGODB_URI) return false;
+  try {
+    const db = await getDatabase();
+    let query: any = { id };
+    if (ObjectId.isValid(id)) query = { $or: [{ id }, { _id: new ObjectId(id) }] };
+
+    const result = await db.collection('billing').deleteOne(query);
+    return result.deletedCount > 0;
+  } catch (error) {
+    return false;
+  }
 }

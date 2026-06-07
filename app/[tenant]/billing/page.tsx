@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { getTenantBySlug } from '../../../lib/tenant';
 import { getTenantBilling } from '../../../lib/school';
+import DownloadPDFButton from './DownloadPDFButton';
 
 type Props = {
   params: {
@@ -39,6 +40,7 @@ export default async function BillingPage({ params }: Props) {
               <th className="px-6 py-4">Amount</th>
               <th className="px-6 py-4">Due date</th>
               <th className="px-6 py-4">Status</th>
+              <th className="px-6 py-4 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800">
@@ -48,6 +50,9 @@ export default async function BillingPage({ params }: Props) {
                 <td className="px-6 py-4 text-slate-300">৳{invoice.amount.toLocaleString()}</td>
                 <td className="px-6 py-4 text-slate-300">{invoice.due}</td>
                 <td className="px-6 py-4 text-slate-300">{invoice.status}</td>
+                <td className="px-6 py-4 text-right">
+                  <DownloadPDFButton invoice={invoice} tenant={tenant} />
+                </td>
               </tr>
             ))}
           </tbody>

@@ -187,3 +187,34 @@ export async function deleteTenant(slug: string) {
     return false;
   }
 }
+
+export async function renewTenantSubscription(slug: string) {
+  if (!process.env.MONGODB_URI) {
+    return false;
+  }
+  try {
+    const db = await getDatabase();
+    const tenant = await db.collection('tenants').findOne({ slug });
+    if (!tenant) return false;
+
+    const currentExpiry = tenant.subscriptionExpiresAt ? new Date(tenant.subscriptionExpiresAt) : new Date();
+    const baseDate = currentExpiry < new Date() ? new Date() : currentExpiry;
+    const newExpiry = new Date(baseDate.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+    await db.collection('tenants').updateOne({ slug }, { $set: { subscriptionExpiresAt: newExpiry } });
+
+    const newInvoice = {
+      tenantSlug: slug,
+      label: `${tenant.plan} Plan Subscription Renewal`,
+      amount: tenant.revenue || 0,
+      due: new Date(baseDate.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      status: 'pending',
+    };
+
+    await db.collection('billing').insertOne(newInvoice);
+    return true;
+  } catch (error) {
+    console.error('Failed to renew subscription:', error);
+    return false;
+  }
+}
