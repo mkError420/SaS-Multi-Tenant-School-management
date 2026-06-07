@@ -14,13 +14,15 @@ export default async function SuperAdminPage() {
     redirect('/login');
   }
 
+  let user;
   try {
-    const user = JSON.parse(userCookie);
-    if (user.role !== 'super-admin') {
-      redirect('/');
-    }
+    user = JSON.parse(userCookie);
   } catch (e) {
     redirect('/login');
+  }
+
+  if (user?.role !== 'super-admin') {
+    redirect('/');
   }
 
   const tenants = await getAllTenants();
