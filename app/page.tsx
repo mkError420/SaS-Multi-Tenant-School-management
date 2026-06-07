@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default async function HomePage() {
   const tenants = await getAllTenants();
-  const plans = getSubscriptionPlans();
+  const plans = await getSubscriptionPlans();
 
   return (
     <main className="mx-auto max-w-7xl px-6 py-10 lg:px-8">

@@ -134,3 +134,18 @@ export async function updateTenantStatus(slug: string, status: 'active' | 'pendi
     return false;
   }
 }
+
+export async function deleteTenant(slug: string) {
+  if (!process.env.MONGODB_URI) {
+    return false;
+  }
+  try {
+    const db = await getDatabase();
+    const result = await db.collection('tenants').deleteOne({ slug });
+    await db.collection('users').deleteMany({ tenantSlug: slug });
+    return result.deletedCount > 0;
+  } catch (error) {
+    console.error('Failed to delete tenant:', error);
+    return false;
+  }
+}

@@ -252,9 +252,52 @@ export async function getTenantBilling(tenantSlug: string) {
   }
 }
 
+export async function getSubscriptionPlans() {
+  if (!process.env.MONGODB_URI) {
+    return defaultPlans;
+  }
 
-export function getSubscriptionPlans() {
-  return defaultPlans;
+  try {
+    const db = await getDatabase();
+    const plans = await db.collection<PlanPackage>('plans').find().toArray();
+    if (plans.length === 0) {
+      // Seed plans initially if they don't exist
+      await db.collection('plans').insertMany(defaultPlans as any);
+      return defaultPlans;
+    }
+    return plans.map((p) => ({ ...p, id: (p as any).id || (p as any)._id.toString() })) as PlanPackage[];
+  } catch (error) {
+    console.error('Failed to load plans:', error);
+    return defaultPlans;
+  }
+}
+
+export async function updatePlan(id: string, price: number, name?: string, studentLimit?: number) {
+  if (!process.env.MONGODB_URI) return false;
+  try {
+    const db = await getDatabase();
+    const updateDoc: any = { price };
+    if (name) updateDoc.name = name;
+    if (studentLimit !== undefined) updateDoc.studentLimit = studentLimit;
+
+    const result = await db.collection('plans').updateOne({ id }, { $set: updateDoc });
+
+    // Dynamically cascade plan price changes to update Total Revenue for existing tenants
+    if (result.matchedCount > 0) {
+      const updatedPlan = await db.collection('plans').findOne({ id });
+      if (updatedPlan && updatedPlan.name) {
+        await db.collection('tenants').updateMany(
+          { plan: updatedPlan.name },
+          { $set: { revenue: price } }
+        );
+      }
+    }
+
+    return result.modifiedCount > 0;
+  } catch (error) {
+    console.error('Failed to update plan:', error);
+    return false;
+  }
 }
 
 export async function getTenantAcademicSetup(tenantSlug: string) {
@@ -382,6 +425,10 @@ export async function onboardTenant(payload: OnboardTenantPayload) {
     throw new Error('A tenant with that slug already exists.');
   }
 
+  // Determine initial revenue dynamically based on the selected subscription plan
+  const plans = await getSubscriptionPlans();
+  const selectedPlan = plans.find((p) => p.name === payload.plan || p.id === payload.plan);
+
   const tenant = {
     name: payload.name,
     slug: payload.slug,
@@ -392,7 +439,7 @@ export async function onboardTenant(payload: OnboardTenantPayload) {
     students: 0,
     teachers: 0,
     classes: 0,
-    revenue: 0,
+    revenue: selectedPlan ? selectedPlan.price : 0,
   };
 
   const defaultStudent = {
@@ -422,8 +469,8 @@ export async function onboardTenant(payload: OnboardTenantPayload) {
 
   const defaultInvoice = {
     tenantSlug: payload.slug,
-    label: 'Onboarding fee',
-    amount: 1200,
+    label: `${payload.plan} Plan Subscription`,
+    amount: selectedPlan ? selectedPlan.price : 1200,
     due: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0],
     status: 'pending' as const,
   };
