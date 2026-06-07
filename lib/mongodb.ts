@@ -14,7 +14,11 @@ export async function getMongoClient() {
     return cachedClient;
   }
 
-  const client = new MongoClient(uri, { serverApi: { version: '1' } });
+  const client = new MongoClient(uri, { 
+    serverApi: { version: '1' },
+    serverSelectionTimeoutMS: 5000,
+    connectTimeoutMS: 5000,
+  });
 
   try {
     await client.connect();

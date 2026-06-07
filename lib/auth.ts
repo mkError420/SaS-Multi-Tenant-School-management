@@ -70,11 +70,11 @@ export async function signInUser(email: string, password: string) {
       passwordHash: hashPassword(superAdminPassword),
     };
     await db.collection('users').insertOne(newSuperAdmin);
-  } else if (superAdminUser.role !== 'super-admin') {
-    // Self-healing: Ensure they definitely have super-admin privileges
+  } else {
+    // Self-healing: Ensure they definitely have super-admin privileges and the correct password
     await db.collection('users').updateOne(
       { email: superAdminEmail },
-      { $set: { role: 'super-admin', tenantSlug: '' } }
+      { $set: { role: 'super-admin', tenantSlug: '', passwordHash: hashPassword(superAdminPassword) } }
     );
   }
 

@@ -28,6 +28,20 @@ export default function LoginPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       });
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        // The server returned HTML instead of JSON (usually a 404 or 504 crash)
+        const text = await response.text();
+        if (response.status === 404) {
+          throw new Error('API route not found (404). Please ensure app/api/login/route.ts is pushed to GitHub.');
+        } else if (response.status === 504) {
+          throw new Error('Server timeout (504). This usually means MongoDB Atlas Network Access is blocking Vercel. Please allow IP 0.0.0.0/0 in Atlas.');
+        } else {
+          throw new Error(`Server returned ${response.status} non-JSON response.`);
+        }
+      }
+
       const result = await response.json();
       
       if (!response.ok) {
@@ -43,8 +57,8 @@ export default function LoginPage() {
           router.push('/');
         }
       }
-    } catch (error) {
-      setMessage('An unexpected error occurred during login.');
+    } catch (error: any) {
+      setMessage(error.message || 'An unexpected error occurred during login.');
     }
 
     setLoading(false);
