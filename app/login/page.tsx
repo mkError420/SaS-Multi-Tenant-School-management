@@ -2,6 +2,7 @@
 
 import { useState, ChangeEvent, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import { loginAction } from './actions';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -23,35 +24,16 @@ export default function LoginPage() {
     setMessage(null);
 
     try {
-      const response = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
-      });
+      const result = await loginAction(form.email, form.password);
       
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        // The server returned HTML instead of JSON (usually a 404 or 504 crash)
-        const text = await response.text();
-        if (response.status === 404) {
-          throw new Error('API route not found (404). Please ensure app/api/login/route.ts is pushed to GitHub.');
-        } else if (response.status === 504) {
-          throw new Error('Server timeout (504). This usually means MongoDB Atlas Network Access is blocking Vercel. Please allow IP 0.0.0.0/0 in Atlas.');
-        } else {
-          throw new Error(`Server returned ${response.status} non-JSON response.`);
-        }
-      }
-
-      const result = await response.json();
-      
-      if (!response.ok) {
-        setMessage(result.error || 'Invalid credentials.');
+      if (result.error) {
+        setMessage(result.error);
       } else {
         setMessage('Login successful. Redirecting...');
         // Redirect based on the user's role and associated tenant
-        if (result.user.role === 'super-admin') {
+        if (result.user?.role === 'super-admin') {
           router.push('/super-admin');
-        } else if (result.user.tenantSlug) {
+        } else if (result.user?.tenantSlug) {
           router.push(`/${result.user.tenantSlug}`);
         } else {
           router.push('/');
