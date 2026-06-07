@@ -7,28 +7,38 @@ if (!uri) {
   console.warn('MONGODB_URI is not defined. The app will fall back to sample tenant data.');
 }
 
-let cachedClient: MongoClient | null = null;
+declare global {
+  var _mongoClientPromise: Promise<MongoClient> | undefined;
+}
 
-export async function getMongoClient() {
-  if (cachedClient) {
-    return cachedClient;
-  }
+let clientPromise: Promise<MongoClient>;
 
-  const client = new MongoClient(uri, { 
-    serverApi: { version: '1' },
+if (uri) {
+  const options = { 
+    serverApi: { version: '1' as const },
     serverSelectionTimeoutMS: 5000,
     connectTimeoutMS: 5000,
-  });
-
-  try {
-    await client.connect();
-    cachedClient = client;
-    return client;
-  } catch (error) {
-    console.error('MongoDB connection failed. Verify MONGODB_URI, network access, DNS resolution, and Atlas IP access list.', error);
-    if (uri.startsWith('mongodb+srv://')) {
-      throw new Error('MongoDB Atlas SRV connection failed. Check your MongoDB URI, DNS resolution, and firewall/IP access rules.');
+  };
+  if (process.env.NODE_ENV === 'development') {
+    if (!globalThis._mongoClientPromise) {
+      const client = new MongoClient(uri, options);
+      globalThis._mongoClientPromise = client.connect();
     }
+    clientPromise = globalThis._mongoClientPromise;
+  } else {
+    const client = new MongoClient(uri, options);
+    clientPromise = client.connect();
+  }
+}
+
+export async function getMongoClient() {
+  if (!uri) {
+    throw new Error('MONGODB_URI is missing. Please configure it in your Vercel settings.');
+  }
+  try {
+    return await clientPromise;
+  } catch (error) {
+    console.error('MongoDB connection failed. Verify MONGODB_URI and Network Access.', error);
     throw error;
   }
 }

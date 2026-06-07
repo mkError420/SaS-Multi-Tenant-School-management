@@ -18,6 +18,8 @@ export function verifyPassword(password: string, passwordHash: string) {
 }
 
 export async function getUserByEmail(email: string) {
+  email = email.toLowerCase().trim();
+
   if (!process.env.MONGODB_URI) {
     return null;
   }
@@ -27,6 +29,8 @@ export async function getUserByEmail(email: string) {
 }
 
 export async function signUpUser(email: string, password: string, tenantSlug: string, role: 'super-admin' | 'admin' | 'teacher' | 'staff' = 'admin') {
+  email = email.toLowerCase().trim();
+
   if (!process.env.MONGODB_URI) {
     throw new Error('MongoDB is not configured. User registration requires a database.');
   }
@@ -50,6 +54,8 @@ export async function signUpUser(email: string, password: string, tenantSlug: st
 }
 
 export async function signInUser(email: string, password: string) {
+  email = email.toLowerCase().trim();
+
   if (!process.env.MONGODB_URI) {
     throw new Error('MongoDB is not configured. Authentication requires a database.');
   }
