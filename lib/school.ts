@@ -205,7 +205,14 @@ export async function getTenantStudents(tenantSlug: string) {
 
   try {
     const db = await getDatabase();
-    return (await db.collection<Student>('students').find(tenantScopeQuery(tenantSlug)).toArray()) as Student[];
+    const records = await db.collection('students').find(tenantScopeQuery(tenantSlug)).toArray();
+    return records.map((r: any) => ({
+      id: r._id.toString(),
+      name: r.name,
+      grade: r.grade,
+      status: r.status,
+      enrolled: r.enrolled,
+    })) as Student[];
   } catch (error) {
     console.error('Failed to load tenant students:', error);
     return [];
@@ -219,7 +226,14 @@ export async function getTenantTeachers(tenantSlug: string) {
 
   try {
     const db = await getDatabase();
-    return (await db.collection<Teacher>('teachers').find(tenantScopeQuery(tenantSlug)).toArray()) as Teacher[];
+    const records = await db.collection('teachers').find(tenantScopeQuery(tenantSlug)).toArray();
+    return records.map((r: any) => ({
+      id: r._id.toString(),
+      name: r.name,
+      subject: r.subject,
+      email: r.email,
+      status: r.status,
+    })) as Teacher[];
   } catch (error) {
     console.error('Failed to load tenant teachers:', error);
     return [];
@@ -233,7 +247,15 @@ export async function getTenantSchedule(tenantSlug: string) {
 
   try {
     const db = await getDatabase();
-    return (await db.collection<ClassSchedule>('classes').find(tenantScopeQuery(tenantSlug)).toArray()) as ClassSchedule[];
+    const records = await db.collection('classes').find(tenantScopeQuery(tenantSlug)).toArray();
+    return records.map((r: any) => ({
+      id: r._id.toString(),
+      title: r.title,
+      day: r.day,
+      time: r.time,
+      room: r.room,
+      teacher: r.teacher,
+    })) as ClassSchedule[];
   } catch (error) {
     console.error('Failed to load tenant schedule:', error);
     return [];
@@ -249,7 +271,7 @@ export async function getTenantBilling(tenantSlug: string) {
     const db = await getDatabase();
     const records = await db.collection('billing').find(tenantScopeQuery(tenantSlug)).toArray();
     return records.map((r: any) => ({
-      id: r.id || r._id.toString(),
+      id: r._id.toString(),
       label: r.label,
       amount: r.amount,
       due: r.due,
@@ -346,7 +368,14 @@ export async function getTenantNoticeBoard(tenantSlug: string) {
 
   try {
     const db = await getDatabase();
-    return (await db.collection<Notice>('notices').find(tenantScopeQuery(tenantSlug)).toArray()) as Notice[];
+    const records = await db.collection('notices').find(tenantScopeQuery(tenantSlug)).toArray();
+    return records.map((r: any) => ({
+      id: r._id.toString(),
+      title: r.title,
+      date: r.date,
+      audience: r.audience,
+      message: r.message,
+    })) as Notice[];
   } catch (error) {
     console.error('Failed to load notices:', error);
     return defaultNotices;
