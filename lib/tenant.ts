@@ -90,13 +90,20 @@ export async function getAllTenants() {
 export async function getTenantBySlug(slug: string) {
   // Demo fallback ONLY when Mongo is not configured at all.
   if (!process.env.MONGODB_URI) {
-    return defaultTenants.find((tenant) => tenant.slug === slug) ?? null;
+    const fallbackTenant = defaultTenants.find((tenant) => tenant.slug === slug) ?? null;
+    if (fallbackTenant && fallbackTenant.status !== 'active') return null;
+    return fallbackTenant;
   }
 
   try {
     const db = await getDatabase();
     const tenant = await db.collection('tenants').findOne({ slug });
     if (!tenant) {
+      return null;
+    }
+
+    // If the tenant is suspended or pending, block access (returns 404 in standard Next.js pages)
+    if (tenant.status && tenant.status !== 'active') {
       return null;
     }
 

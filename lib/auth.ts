@@ -74,5 +74,13 @@ export async function signInUser(email: string, password: string) {
     return null;
   }
 
+  // Prevent logins for users belonging to non-active tenants
+  if (user.role !== 'super-admin' && user.tenantSlug) {
+    const tenant = await db.collection('tenants').findOne({ slug: user.tenantSlug });
+    if (tenant && tenant.status && tenant.status !== 'active') {
+      throw new Error(`Account access denied. The school is currently ${tenant.status}.`);
+    }
+  }
+
   return user;
 }
