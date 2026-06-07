@@ -17,6 +17,7 @@ export default function OnboardingPage() {
     phone: '',
     authorityName: '',
     email: '',
+    category: 'demo',
   });
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -104,10 +105,19 @@ export default function OnboardingPage() {
             </label>
           </div>
 
-          <label className="block">
-            <span className="text-sm font-semibold text-slate-200">Authority name</span>
-            <input name="authorityName" value={form.authorityName} onChange={handleChange} required className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white" />
-          </label>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="block">
+              <span className="text-sm font-semibold text-slate-200">Authority name</span>
+              <input name="authorityName" value={form.authorityName} onChange={handleChange} required className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white" />
+            </label>
+            <label className="block">
+              <span className="text-sm font-semibold text-slate-200">Category</span>
+              <select name="category" value={form.category} onChange={handleChange} className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white">
+                <option value="demo">Demo School</option>
+                <option value="trusted">Trusted Organization</option>
+              </select>
+            </label>
+          </div>
 
           <label className="block">
             <span className="text-sm font-semibold text-slate-200">Description</span>

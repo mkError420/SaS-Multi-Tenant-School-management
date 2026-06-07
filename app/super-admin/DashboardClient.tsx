@@ -39,7 +39,7 @@ export default function DashboardClient({
 
   const [viewTenant, setViewTenant] = useState<Tenant | null>(null);
   const [editTenantModal, setEditTenantModal] = useState<Tenant | null>(null);
-  const [tenantForm, setTenantForm] = useState({ name: '', city: '', phone: '', authorityName: '', email: '', description: '' });
+  const [tenantForm, setTenantForm] = useState<{ name: string; city: string; phone: string; authorityName: string; email: string; description: string; category: 'demo' | 'trusted' }>({ name: '', city: '', phone: '', authorityName: '', email: '', description: '', category: 'demo' });
 
   const [revenueMonth, setRevenueMonth] = useState((new Date().getMonth() + 1).toString().padStart(2, '0'));
   const [revenueYear, setRevenueYear] = useState(new Date().getFullYear().toString());
@@ -75,6 +75,7 @@ export default function DashboardClient({
       authorityName: tenant.authorityName || '',
       email: tenant.email || '',
       description: tenant.description || '',
+      category: tenant.category || 'demo',
     });
   };
 
@@ -221,6 +222,9 @@ export default function DashboardClient({
     tenant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     tenant.slug.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const demoTenants = filteredTenants.filter(t => t.category === 'demo' || !t.category);
+  const trustedTenants = filteredTenants.filter(t => t.category === 'trusted');
 
   const expiredTenants = tenants.filter(
     (t) => t.status === 'active' && t.subscriptionExpiresAt && new Date(t.subscriptionExpiresAt) < new Date()
@@ -449,77 +453,81 @@ export default function DashboardClient({
             className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 text-sm text-white focus:border-sky-500 focus:outline-none"
           />
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-slate-300">
-            <thead className="border-b border-slate-800 text-slate-400">
-              <tr>
-                <th className="pb-3 font-medium">School Name</th>
-                <th className="pb-3 font-medium">Plan</th>
-                <th className="pb-3 font-medium">Students</th>
-                <th className="pb-3 font-medium">Revenue</th>
-                <th className="pb-3 font-medium">Dates</th>
-                <th className="pb-3 font-medium">Status</th>
-                <th className="pb-3 text-right font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800">
-              {filteredTenants.map((tenant) => (
-                <tr key={tenant.id} className="transition hover:bg-slate-800/20">
-                  <td className="py-4 font-medium text-white">{tenant.name}<br /><span className="text-xs font-normal text-slate-500">{tenant.slug}</span></td>
-                  <td className="py-4">{tenant.plan}</td>
-                  <td className="py-4">{tenant.students}</td>
-                  <td className="py-4">৳{tenant.revenue.toLocaleString()}</td>
-                  <td className="py-4">
-                    {tenant.activationDate ? (
-                      <div className="text-xs">
-                        <p>Active: {new Date(tenant.activationDate).toLocaleDateString()}</p>
-                        <p className={tenant.subscriptionExpiresAt && new Date(tenant.subscriptionExpiresAt) < new Date() ? 'font-semibold text-red-400' : 'text-slate-400'}>
-                          Expires: {tenant.subscriptionExpiresAt ? new Date(tenant.subscriptionExpiresAt).toLocaleDateString() : 'N/A'}
-                        </p>
-                      </div>
-                    ) : (
-                      <span className="text-xs text-slate-500">Not activated</span>
-                    )}
-                  </td>
-                  <td className="py-4">
-                    <select
-                      value={tenant.status}
-                      onChange={(e) => handleStatusChange(tenant.slug, e.target.value as 'active' | 'pending' | 'suspended')}
-                      disabled={isPending}
-                      className="rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-sm text-white focus:border-sky-500 focus:outline-none disabled:opacity-50"
-                    >
-                      <option value="active">Active</option>
-                      <option value="pending">Pending</option>
-                      <option value="suspended">Suspended</option>
-                    </select>
-                  </td>
-                  <td className="py-4 text-right space-x-3">
-                    <button onClick={() => setViewTenant(tenant)} className="text-slate-400 transition hover:text-white" title="View Details">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="inline-block h-5 w-5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-                      </svg>
-                    </button>
-                    <button onClick={() => handleOpenEditTenant(tenant)} disabled={isPending} className="text-sky-400 transition hover:text-sky-300 disabled:opacity-50" title="Edit Tenant">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="inline-block h-5 w-5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-                      </svg>
-                    </button>
-                    <Link href={`/${tenant.slug}`} className="text-indigo-400 transition hover:text-indigo-300">Portal</Link>
-                    <button onClick={() => handleOpenInvoices(tenant)} disabled={isPending} className="text-sky-400 transition hover:text-sky-300 disabled:opacity-50">Invoices</button>
-                    <button onClick={() => handleRenew(tenant.slug)} disabled={isPending} className="text-emerald-400 transition hover:text-emerald-300 disabled:opacity-50">Renew</button>
-                    <button onClick={() => handleDelete(tenant.slug)} disabled={isPending} className="text-red-400 transition hover:text-red-300 disabled:opacity-50">Delete</button>
-                  </td>
-                </tr>
-              ))}
-              {filteredTenants.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="py-4 text-center text-slate-500">No tenants found.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        
+        {[
+          { title: 'Trusted Organizations', data: trustedTenants },
+          { title: 'Demo Schools', data: demoTenants }
+        ].map((section) => (
+          <div key={section.title} className="mt-8 border-t border-slate-800 pt-6 first:border-0 first:pt-0">
+            <h3 className="mb-4 text-lg font-semibold text-white">{section.title} ({section.data.length})</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm text-slate-300">
+                <thead className="border-b border-slate-800 text-slate-400">
+                  <tr>
+                    <th className="pb-3 font-medium">School Name</th>
+                    <th className="pb-3 font-medium">Plan</th>
+                    <th className="pb-3 font-medium">Students</th>
+                    <th className="pb-3 font-medium">Revenue</th>
+                    <th className="pb-3 font-medium">Dates</th>
+                    <th className="pb-3 font-medium">Status</th>
+                    <th className="pb-3 text-right font-medium">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800">
+                  {section.data.map((tenant) => (
+                    <tr key={tenant.id} className="transition hover:bg-slate-800/20">
+                      <td className="py-4 font-medium text-white">{tenant.name}<br /><span className="text-xs font-normal text-slate-500">{tenant.slug}</span></td>
+                      <td className="py-4">{tenant.plan}</td>
+                      <td className="py-4">{tenant.students}</td>
+                      <td className="py-4">৳{tenant.revenue.toLocaleString()}</td>
+                      <td className="py-4">
+                        {tenant.activationDate ? (
+                          <div className="text-xs">
+                            <p>Active: {new Date(tenant.activationDate).toLocaleDateString()}</p>
+                            <p className={tenant.subscriptionExpiresAt && new Date(tenant.subscriptionExpiresAt) < new Date() ? 'font-semibold text-red-400' : 'text-slate-400'}>
+                              Expires: {tenant.subscriptionExpiresAt ? new Date(tenant.subscriptionExpiresAt).toLocaleDateString() : 'N/A'}
+                            </p>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-slate-500">Not activated</span>
+                        )}
+                      </td>
+                      <td className="py-4">
+                        <select
+                          value={tenant.status}
+                          onChange={(e) => handleStatusChange(tenant.slug, e.target.value as 'active' | 'pending' | 'suspended')}
+                          disabled={isPending}
+                          className="rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-sm text-white focus:border-sky-500 focus:outline-none disabled:opacity-50"
+                        >
+                          <option value="active">Active</option>
+                          <option value="pending">Pending</option>
+                          <option value="suspended">Suspended</option>
+                        </select>
+                      </td>
+                      <td className="py-4 text-right space-x-3 whitespace-nowrap">
+                        <button onClick={() => setViewTenant(tenant)} className="text-slate-400 transition hover:text-white" title="View Details">
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="inline-block h-5 w-5"><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+                        </button>
+                        <button onClick={() => handleOpenEditTenant(tenant)} disabled={isPending} className="text-sky-400 transition hover:text-sky-300 disabled:opacity-50" title="Edit Tenant">
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="inline-block h-5 w-5"><path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></svg>
+                        </button>
+                        <Link href={`/${tenant.slug}`} className="text-indigo-400 transition hover:text-indigo-300">Portal</Link>
+                        <button onClick={() => handleOpenInvoices(tenant)} disabled={isPending} className="text-sky-400 transition hover:text-sky-300 disabled:opacity-50">Invoices</button>
+                        <button onClick={() => handleRenew(tenant.slug)} disabled={isPending} className="text-emerald-400 transition hover:text-emerald-300 disabled:opacity-50">Renew</button>
+                        <button onClick={() => handleDelete(tenant.slug)} disabled={isPending} className="text-red-400 transition hover:text-red-300 disabled:opacity-50">Delete</button>
+                      </td>
+                    </tr>
+                  ))}
+                  {section.data.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className="py-4 text-center text-slate-500">No {section.title.toLowerCase()} found.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ))}
       </section>
 
       {/* Plans Management */}
@@ -666,6 +674,10 @@ export default function DashboardClient({
                 <p className="mt-1 text-sm text-white">{viewTenant.email || 'N/A'}</p>
               </div>
               <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Category</p>
+                <p className="mt-1 text-sm text-white capitalize">{viewTenant.category || 'demo'}</p>
+              </div>
+              <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Phone Number</p>
                 <p className="mt-1 text-sm text-white">{viewTenant.phone || 'N/A'}</p>
               </div>
@@ -745,6 +757,13 @@ export default function DashboardClient({
               <label className="block">
                 <span className="text-sm font-semibold text-slate-200">School Email</span>
                 <input required type="email" value={tenantForm.email} onChange={(e) => setTenantForm({ ...tenantForm, email: e.target.value })} className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white focus:border-sky-500 focus:outline-none" />
+              </label>
+              <label className="block">
+                <span className="text-sm font-semibold text-slate-200">Category</span>
+                <select required value={tenantForm.category} onChange={(e) => setTenantForm({ ...tenantForm, category: e.target.value as 'demo' | 'trusted' })} className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white focus:border-sky-500 focus:outline-none">
+                  <option value="demo">Demo School</option>
+                  <option value="trusted">Trusted Organization</option>
+                </select>
               </label>
               <label className="block">
                 <span className="text-sm font-semibold text-slate-200">Description</span>

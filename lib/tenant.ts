@@ -17,6 +17,7 @@ export type Tenant = {
   phone?: string;
   authorityName?: string;
   email?: string;
+  category?: 'demo' | 'trusted';
 };
 
 const defaultTenants: Tenant[] = [
@@ -37,6 +38,7 @@ const defaultTenants: Tenant[] = [
     phone: '+8801700000001',
     authorityName: 'Mr. Anisur Rahman',
     email: 'contact@zass-elementary.edu',
+    category: 'trusted',
   },
     {
     id: 'tenant_3',
@@ -53,6 +55,7 @@ const defaultTenants: Tenant[] = [
     phone: '+8801700000002',
     authorityName: 'Ms. Farhana Haque',
     email: 'info@zass-middle.edu',
+    category: 'demo',
   },
   {
     id: 'tenant_2',
@@ -71,6 +74,7 @@ const defaultTenants: Tenant[] = [
     phone: '+8801700000003',
     authorityName: 'Dr. Kamal Hossain',
     email: 'admin@zass-high.edu',
+    category: 'trusted',
   },
 ];
 
@@ -108,6 +112,7 @@ export async function getAllTenants() {
           phone: tenant.phone,
           authorityName: tenant.authorityName,
           email: tenant.email,
+          category: tenant.category || 'demo',
         };
       })
     );
@@ -162,6 +167,7 @@ export async function getTenantBySlug(slug: string) {
       phone: tenant.phone,
       authorityName: tenant.authorityName,
       email: tenant.email,
+      category: tenant.category || 'demo',
     } as Tenant;
   } catch (error) {
     console.error('Failed to fetch tenant from MongoDB:', error);
@@ -197,7 +203,7 @@ export async function updateTenantStatus(slug: string, status: 'active' | 'pendi
   }
 }
 
-export async function updateTenantDetails(slug: string, payload: { name: string; city: string; description: string; phone: string; authorityName: string; email: string }) {
+export async function updateTenantDetails(slug: string, payload: { name: string; city: string; description: string; phone: string; authorityName: string; email: string; category: 'demo' | 'trusted' }) {
   if (!process.env.MONGODB_URI) {
     return false;
   }

@@ -531,6 +531,7 @@ export type OnboardTenantPayload = {
   phone: string;
   authorityName: string;
   email: string;
+  category?: 'demo' | 'trusted';
 };
 
 export async function onboardTenant(payload: OnboardTenantPayload) {
@@ -562,6 +563,7 @@ export async function onboardTenant(payload: OnboardTenantPayload) {
     phone: payload.phone,
     authorityName: payload.authorityName,
     email: payload.email,
+    category: payload.category || 'demo',
   };
 
   const defaultStudent = {

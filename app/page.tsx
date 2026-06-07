@@ -10,6 +10,9 @@ export const metadata: Metadata = {
 export default async function HomePage() {
   const tenants = await getAllTenants();
   const plans = await getSubscriptionPlans();
+  
+  const activeTrusted = tenants.filter(t => t.status === 'active' && t.category === 'trusted');
+  const activeDemo = tenants.filter(t => t.status === 'active' && t.category === 'demo');
 
   return (
     <main className="mx-auto max-w-7xl px-6 py-10 lg:px-8">
@@ -34,9 +37,9 @@ export default async function HomePage() {
 
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:mt-0 lg:w-full lg:max-w-[420px]">
           <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 text-center">
-            <p className="text-sm uppercase tracking-[0.3em] text-sky-400">Trusted</p>
-            <p className="mt-3 text-4xl font-semibold text-white">3</p>
-            <p className="mt-3 text-sm leading-6 text-slate-400">demo school portals ready to preview</p>
+            <p className="text-sm uppercase tracking-[0.3em] text-sky-400">Trusted by</p>
+            <p className="mt-3 text-4xl font-semibold text-white">{activeTrusted.length}</p>
+            <p className="mt-3 text-sm leading-6 text-slate-400">trusted organizations running on our platform</p>
           </div>
           <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 text-center">
             <p className="text-sm uppercase tracking-[0.3em] text-sky-400">Built for</p>
@@ -92,19 +95,20 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {activeTrusted.length > 0 && (
       <section className="mt-16">
         <div className="flex flex-wrap items-center justify-between gap-6">
           <div>
-            <p className="text-sm uppercase tracking-[0.3em] text-sky-400">School demos</p>
-            <h2 className="mt-3 text-3xl font-semibold text-white">Preview demo schools instantly</h2>
+            <p className="text-sm uppercase tracking-[0.3em] text-sky-400">Trusted Organizations</p>
+            <h2 className="mt-3 text-3xl font-semibold text-white">Join our trusted network</h2>
           </div>
           <p className="max-w-2xl text-sm leading-6 text-slate-400">
-            Explore school portals and see how Zass keeps tenant data separate while delivering a unified experience.
+            Visit our actively running trusted school portals and see how the platform securely isolates tenant data while delivering a premium experience.
           </p>
         </div>
 
         <div className="mt-10 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-          {tenants.map((tenant) => (
+          {activeTrusted.map((tenant) => (
             <Link key={tenant.slug} href={`/${tenant.slug}`} className="group block rounded-[1.75rem] border border-slate-800 bg-slate-900 p-6 transition hover:-translate-y-1 hover:border-sky-400">
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -118,6 +122,36 @@ export default async function HomePage() {
           ))}
         </div>
       </section>
+      )}
+
+      {activeDemo.length > 0 && (
+      <section className="mt-16">
+        <div className="flex flex-wrap items-center justify-between gap-6">
+          <div>
+            <p className="text-sm uppercase tracking-[0.3em] text-sky-400">Demo Schools</p>
+            <h2 className="mt-3 text-3xl font-semibold text-white">Explore our demo setups</h2>
+          </div>
+          <p className="max-w-2xl text-sm leading-6 text-slate-400">
+            Try out these demo environments to see the platform's features in action.
+          </p>
+        </div>
+
+        <div className="mt-10 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+          {activeDemo.map((tenant) => (
+            <Link key={tenant.slug} href={`/${tenant.slug}`} className="group block rounded-[1.75rem] border border-slate-800 bg-slate-900 p-6 transition hover:-translate-y-1 hover:border-sky-400">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm uppercase tracking-[0.3em] text-sky-400">{tenant.plan}</p>
+                  <h3 className="mt-4 text-2xl font-semibold text-white">{tenant.name}</h3>
+                </div>
+                <div className="rounded-2xl bg-slate-800 px-3 py-2 text-sm text-slate-300">{tenant.city}</div>
+              </div>
+              <p className="mt-6 text-sm leading-6 text-slate-400">{tenant.description}</p>
+            </Link>
+          ))}
+        </div>
+      </section>
+      )}
 
       <a
         href="https://wa.me/8801572491828"
