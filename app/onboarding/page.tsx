@@ -40,8 +40,8 @@ export default function OnboardingPage() {
       if (!response.ok) {
         setMessage(result.error || 'Unable to onboard tenant.');
       } else {
-        setMessage('Tenant created successfully. Redirecting to login...');
-        router.push('/login');
+        setMessage('Tenant created successfully. Redirecting to dashboard...');
+        router.push('/super-admin');
       }
     } catch (error) {
       setMessage('An unexpected error occurred during onboarding.');

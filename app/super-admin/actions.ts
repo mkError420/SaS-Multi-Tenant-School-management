@@ -14,8 +14,8 @@ export async function removeTenantAction(slug: string) {
   revalidatePath('/super-admin');
 }
 
-export async function editPlanAction(id: string, price: number, name: string, limit: number) {
-  await updatePlan(id, price, name, limit);
+export async function editPlanAction(id: string, price: number, name: string, limit: number, durationDays: number) {
+  await updatePlan(id, price, name, limit, durationDays);
   revalidatePath('/super-admin');
   revalidatePath('/');
 }

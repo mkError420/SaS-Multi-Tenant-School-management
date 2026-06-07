@@ -160,8 +160,10 @@ export async function updateTenantStatus(slug: string, status: 'active' | 'pendi
     if (status === 'active') {
       const tenant = await db.collection('tenants').findOne({ slug });
       if (tenant && !tenant.activationDate) {
+        const planInfo = await db.collection('plans').findOne({ name: tenant.plan });
+        const duration = planInfo?.durationDays || 30;
         updateDoc.activationDate = new Date().toISOString();
-        updateDoc.subscriptionExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+        updateDoc.subscriptionExpiresAt = new Date(Date.now() + duration * 24 * 60 * 60 * 1000).toISOString();
       }
     }
 
@@ -197,9 +199,12 @@ export async function renewTenantSubscription(slug: string) {
     const tenant = await db.collection('tenants').findOne({ slug });
     if (!tenant) return false;
 
+    const planInfo = await db.collection('plans').findOne({ name: tenant.plan });
+    const duration = planInfo?.durationDays || 30;
+
     const currentExpiry = tenant.subscriptionExpiresAt ? new Date(tenant.subscriptionExpiresAt) : new Date();
     const baseDate = currentExpiry < new Date() ? new Date() : currentExpiry;
-    const newExpiry = new Date(baseDate.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    const newExpiry = new Date(baseDate.getTime() + duration * 24 * 60 * 60 * 1000).toISOString();
 
     await db.collection('tenants').updateOne({ slug }, { $set: { subscriptionExpiresAt: newExpiry } });
 
@@ -207,7 +212,7 @@ export async function renewTenantSubscription(slug: string) {
       tenantSlug: slug,
       label: `${tenant.plan} Plan Subscription Renewal`,
       amount: tenant.revenue || 0,
-      due: new Date(baseDate.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      due: new Date(baseDate.getTime() + duration * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       status: 'pending',
     };
 

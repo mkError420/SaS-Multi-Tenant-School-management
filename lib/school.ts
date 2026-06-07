@@ -43,6 +43,7 @@ export type PlanPackage = {
   description: string;
   price: number;
   studentLimit: number;
+  durationDays: number;
 };
 
 export type AcademicSetup = {
@@ -132,9 +133,9 @@ const defaultBilling: BillingRecord[] = [
 ];
 
 const defaultPlans: PlanPackage[] = [
-  { id: 'plan-basic', name: 'Basic', description: 'Up to 200 students, core school tools, and essential support.', price: 29, studentLimit: 200 },
-  { id: 'plan-starter', name: 'Starter', description: 'Up to 500 students, basic school tools, local support.', price: 49, studentLimit: 500 },
-  { id: 'plan-advance', name: 'Advance', description: 'Up to 1,500 students, reports, and enhanced communication.', price: 99, studentLimit: 1500 },
+  { id: 'plan-basic', name: 'Basic', description: 'Up to 200 students, core school tools, and essential support.', price: 29, studentLimit: 200, durationDays: 30 },
+  { id: 'plan-starter', name: 'Starter', description: 'Up to 500 students, basic school tools, local support.', price: 49, studentLimit: 500, durationDays: 30 },
+  { id: 'plan-advance', name: 'Advance', description: 'Up to 1,500 students, reports, and enhanced communication.', price: 99, studentLimit: 1500, durationDays: 30 },
 ];
 
 const defaultAcademicSetup: AcademicSetup = {
@@ -280,13 +281,14 @@ export async function getSubscriptionPlans() {
   }
 }
 
-export async function updatePlan(id: string, price: number, name?: string, studentLimit?: number) {
+export async function updatePlan(id: string, price: number, name?: string, studentLimit?: number, durationDays?: number) {
   if (!process.env.MONGODB_URI) return false;
   try {
     const db = await getDatabase();
     const updateDoc: any = { price };
     if (name) updateDoc.name = name;
     if (studentLimit !== undefined) updateDoc.studentLimit = studentLimit;
+    if (durationDays !== undefined) updateDoc.durationDays = durationDays;
 
     const result = await db.collection('plans').updateOne({ id }, { $set: updateDoc });
 
@@ -479,11 +481,12 @@ export async function onboardTenant(payload: OnboardTenantPayload) {
     teacher: defaultTeacher.name,
   };
 
+  const duration = selectedPlan?.durationDays || 30;
   const defaultInvoice = {
     tenantSlug: payload.slug,
     label: `${payload.plan} Plan Subscription`,
     amount: selectedPlan ? selectedPlan.price : 1200,
-    due: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0],
+    due: new Date(new Date().setDate(new Date().getDate() + duration)).toISOString().split('T')[0],
     status: 'pending' as const,
   };
 
