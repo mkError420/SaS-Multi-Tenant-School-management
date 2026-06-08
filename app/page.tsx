@@ -59,20 +59,38 @@ export default async function HomePage() {
             </p>
           </div>
 
-          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-            {plans.map((plan) => (
-              <article key={plan.id} className="rounded-[1.75rem] border border-slate-800 bg-slate-900/90 p-8 shadow-soft transition hover:-translate-y-1 hover:border-sky-400">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <h3 className="text-xl font-semibold text-white">{plan.name}</h3>
-                    <p className="mt-2 text-sm text-slate-400">{plan.description}</p>
-                  </div>
-                  <div className="rounded-2xl bg-slate-800 px-4 py-2 text-sm font-semibold text-sky-300">Taka {plan.price}</div>
-                </div>
-                <p className="mt-6 text-sm leading-6 text-slate-400">Up to {plan.studentLimit > 0 ? plan.studentLimit : 'unlimited'} students included.</p>
-              </article>
-            ))}
-          </div>
+        <div className="overflow-x-auto rounded-3xl border border-slate-800 bg-slate-900/50 shadow-soft">
+          <table className="w-full text-left text-sm text-slate-300">
+            <thead className="border-b border-slate-800 bg-slate-950/50 text-slate-400">
+              <tr>
+                <th className="px-6 py-4 font-medium">Package Name</th>
+                <th className="px-6 py-4 font-medium">Server & Installation Cost</th>
+                <th className="px-6 py-4 font-medium">Monthly Subscription</th>
+                <th className="px-6 py-4 text-center font-medium">Order</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800">
+              {plans.map((plan) => (
+                <tr key={plan.id} className="transition hover:bg-slate-800/20">
+                  <td className="px-6 py-4 font-semibold text-white">
+                    {plan.name}
+                    <p className="mt-1 font-normal text-xs text-slate-400">{plan.description}</p>
+                  </td>
+                  <td className="px-6 py-4">৳{plan.serverCost || 0}</td>
+                  <td className="px-6 py-4">৳{plan.price}</td>
+                  <td className="px-6 py-4 text-center">
+                    <Link 
+                      href={`/onboarding?plan=${plan.id}`}
+                      className="inline-block rounded-full bg-sky-500 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-sky-400"
+                    >
+                      Order Now
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
         </div>
 
         <div className="rounded-[2rem] border border-slate-800 bg-slate-900/90 p-8 shadow-soft">

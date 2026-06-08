@@ -30,7 +30,7 @@ export default function DashboardClient({
 }) {
   const [isPending, startTransition] = useTransition();
   const [editingPlan, setEditingPlan] = useState<string | null>(null);
-  const [planForm, setPlanForm] = useState({ name: '', price: 0, studentLimit: 0, durationDays: 30 });
+  const [planForm, setPlanForm] = useState({ name: '', price: 0, studentLimit: 0, durationDays: 30, serverCost: 0 });
   const [searchQuery, setSearchQuery] = useState('');
   
   const [invoiceModalTenant, setInvoiceModalTenant] = useState<Tenant | null>(null);
@@ -226,12 +226,12 @@ export default function DashboardClient({
 
   const handleEditPlan = (plan: PlanPackage) => {
     setEditingPlan(plan.id);
-    setPlanForm({ name: plan.name, price: plan.price, studentLimit: plan.studentLimit, durationDays: plan.durationDays || 30 });
+    setPlanForm({ name: plan.name, price: plan.price, studentLimit: plan.studentLimit, durationDays: plan.durationDays || 30, serverCost: plan.serverCost || 0 });
   };
 
   const handleSavePlan = (id: string) => {
     startTransition(() => {
-      editPlanAction(id, Number(planForm.price), planForm.name, Number(planForm.studentLimit), Number(planForm.durationDays));
+      editPlanAction(id, Number(planForm.price), planForm.name, Number(planForm.studentLimit), Number(planForm.durationDays), Number(planForm.serverCost));
       setEditingPlan(null);
     });
   };
@@ -556,34 +556,49 @@ export default function DashboardClient({
       {/* Plans Management */}
       <section className="rounded-3xl border border-slate-800 bg-slate-900/50 p-6">
         <h2 className="mb-6 text-xl font-semibold text-white">Subscription Plans</h2>
-        <div className="grid gap-6 md:grid-cols-3">
-          {plans.map((plan) => (
-            <div key={plan.id} className="rounded-2xl border border-slate-700 bg-slate-800/30 p-5">
-              {editingPlan === plan.id ? (
-                <div className="space-y-3">
-                  <input type="text" value={planForm.name} onChange={(e) => setPlanForm({ ...planForm, name: e.target.value })} className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-white focus:border-sky-500 focus:outline-none" placeholder="Plan Name" />
-                  <input type="number" value={planForm.price} onChange={(e) => setPlanForm({ ...planForm, price: e.target.valueAsNumber })} className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-white focus:border-sky-500 focus:outline-none" placeholder="Price" />
-                  <input type="number" value={planForm.studentLimit} onChange={(e) => setPlanForm({ ...planForm, studentLimit: e.target.valueAsNumber })} className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-white focus:border-sky-500 focus:outline-none" placeholder="Student Limit" />
-                  <input type="number" value={planForm.durationDays} onChange={(e) => setPlanForm({ ...planForm, durationDays: e.target.valueAsNumber })} className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-white focus:border-sky-500 focus:outline-none" placeholder="Duration (Days)" />
-                  <div className="flex gap-2 pt-2">
-                    <button onClick={() => handleSavePlan(plan.id)} disabled={isPending} className="flex-1 rounded-lg bg-sky-500 px-3 py-2 text-sm font-semibold text-slate-950 hover:bg-sky-400 disabled:opacity-50">Save</button>
-                    <button onClick={() => setEditingPlan(null)} disabled={isPending} className="flex-1 rounded-lg border border-slate-600 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-50">Cancel</button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div className="mb-2 flex items-start justify-between">
-                    <h3 className="text-lg font-semibold text-white">{plan.name}</h3>
-                    <button onClick={() => handleEditPlan(plan)} className="text-xs text-sky-400 hover:text-sky-300">Edit</button>
-                  </div>
-                  <p className="mb-2 text-2xl font-bold text-white">৳{plan.price}</p>
-                  <p className="mb-1 text-sm text-slate-400">Max Students: <span className="text-slate-200">{plan.studentLimit}</span></p>
-                  <p className="mb-1 text-sm text-slate-400">Duration: <span className="text-slate-200">{plan.durationDays || 30} Days</span></p>
-                  <p className="text-xs text-slate-500">{plan.description}</p>
-                </>
-              )}
-            </div>
-          ))}
+        <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950">
+          <table className="w-full text-left text-sm text-slate-300">
+            <thead className="border-b border-slate-800 bg-slate-900 text-slate-400">
+              <tr>
+                <th className="px-4 py-3 font-medium">Package Name</th>
+                <th className="px-4 py-3 font-medium">Server & Installation Cost</th>
+                <th className="px-4 py-3 font-medium">Monthly Subscription</th>
+                <th className="px-4 py-3 font-medium">Student Limit</th>
+                <th className="px-4 py-3 font-medium">Duration</th>
+                <th className="px-4 py-3 text-right font-medium">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800">
+              {plans.map((plan) => (
+                <tr key={plan.id} className="transition hover:bg-slate-900/50">
+                  {editingPlan === plan.id ? (
+                    <>
+                      <td className="px-4 py-3"><input type="text" value={planForm.name} onChange={(e) => setPlanForm({ ...planForm, name: e.target.value })} className="w-full min-w-[120px] rounded-lg border border-slate-600 bg-slate-900 px-3 py-1 text-sm text-white focus:border-sky-500 focus:outline-none" placeholder="Package Name" /></td>
+                      <td className="px-4 py-3"><input type="number" value={planForm.serverCost} onChange={(e) => setPlanForm({ ...planForm, serverCost: e.target.valueAsNumber })} className="w-full min-w-[100px] rounded-lg border border-slate-600 bg-slate-900 px-3 py-1 text-sm text-white focus:border-sky-500 focus:outline-none" placeholder="Server Cost" /></td>
+                      <td className="px-4 py-3"><input type="number" value={planForm.price} onChange={(e) => setPlanForm({ ...planForm, price: e.target.valueAsNumber })} className="w-full min-w-[100px] rounded-lg border border-slate-600 bg-slate-900 px-3 py-1 text-sm text-white focus:border-sky-500 focus:outline-none" placeholder="Monthly Sub" /></td>
+                      <td className="px-4 py-3"><input type="number" value={planForm.studentLimit} onChange={(e) => setPlanForm({ ...planForm, studentLimit: e.target.valueAsNumber })} className="w-full min-w-[100px] rounded-lg border border-slate-600 bg-slate-900 px-3 py-1 text-sm text-white focus:border-sky-500 focus:outline-none" placeholder="Student Limit" /></td>
+                      <td className="px-4 py-3"><input type="number" value={planForm.durationDays} onChange={(e) => setPlanForm({ ...planForm, durationDays: e.target.valueAsNumber })} className="w-full min-w-[100px] rounded-lg border border-slate-600 bg-slate-900 px-3 py-1 text-sm text-white focus:border-sky-500 focus:outline-none" placeholder="Duration (Days)" /></td>
+                      <td className="px-4 py-3 text-right space-x-2 whitespace-nowrap">
+                        <button onClick={() => handleSavePlan(plan.id)} disabled={isPending} className="rounded-lg bg-sky-500 px-3 py-1 text-sm font-semibold text-slate-950 hover:bg-sky-400 disabled:opacity-50">Save</button>
+                        <button onClick={() => setEditingPlan(null)} disabled={isPending} className="rounded-lg border border-slate-600 px-3 py-1 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-50">Cancel</button>
+                      </td>
+                    </>
+                  ) : (
+                    <>
+                      <td className="px-4 py-3 font-semibold text-white">{plan.name}</td>
+                      <td className="px-4 py-3">৳{plan.serverCost || 0}</td>
+                      <td className="px-4 py-3">৳{plan.price}</td>
+                      <td className="px-4 py-3">{plan.studentLimit}</td>
+                      <td className="px-4 py-3">{plan.durationDays || 30} Days</td>
+                      <td className="px-4 py-3 text-right">
+                        <button onClick={() => handleEditPlan(plan)} className="text-sky-400 hover:text-sky-300">Edit</button>
+                      </td>
+                    </>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </section>
 

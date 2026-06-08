@@ -22,8 +22,8 @@ export async function editTenantDetailsAction(slug: string, payload: { name: str
   revalidatePath('/super-admin');
 }
 
-export async function editPlanAction(id: string, price: number, name: string, limit: number, durationDays: number) {
-  await updatePlan(id, price, name, limit, durationDays);
+export async function editPlanAction(id: string, price: number, name: string, limit: number, durationDays: number, serverCost: number) {
+  await updatePlan(id, price, name, limit, durationDays, serverCost);
   revalidatePath('/super-admin');
   revalidatePath('/');
 }

@@ -48,6 +48,7 @@ export type PlanPackage = {
   price: number;
   studentLimit: number;
   durationDays: number;
+  serverCost?: number;
 };
 
 export type AcademicSetup = {
@@ -137,9 +138,9 @@ const defaultBilling: BillingRecord[] = [
 ];
 
 const defaultPlans: PlanPackage[] = [
-  { id: 'plan-basic', name: 'Basic', description: 'Up to 200 students, core school tools, and essential support.', price: 29, studentLimit: 200, durationDays: 30 },
-  { id: 'plan-starter', name: 'Starter', description: 'Up to 500 students, basic school tools, local support.', price: 49, studentLimit: 500, durationDays: 30 },
-  { id: 'plan-advance', name: 'Advance', description: 'Up to 1,500 students, reports, and enhanced communication.', price: 99, studentLimit: 1500, durationDays: 30 },
+  { id: 'plan-basic', name: 'Basic', description: 'Up to 200 students, core school tools, and essential support.', price: 29, studentLimit: 200, durationDays: 30, serverCost: 1500 },
+  { id: 'plan-starter', name: 'Starter', description: 'Up to 500 students, basic school tools, local support.', price: 49, studentLimit: 500, durationDays: 30, serverCost: 2500 },
+  { id: 'plan-advance', name: 'Advance', description: 'Up to 1,500 students, reports, and enhanced communication.', price: 99, studentLimit: 1500, durationDays: 30, serverCost: 5000 },
 ];
 
 const defaultAcademicSetup: AcademicSetup = {
@@ -358,7 +359,7 @@ export async function getSubscriptionPlans() {
   }
 }
 
-export async function updatePlan(id: string, price: number, name?: string, studentLimit?: number, durationDays?: number) {
+export async function updatePlan(id: string, price: number, name?: string, studentLimit?: number, durationDays?: number, serverCost?: number) {
   if (!process.env.MONGODB_URI) return false;
   try {
     const db = await getDatabase();
@@ -366,6 +367,7 @@ export async function updatePlan(id: string, price: number, name?: string, stude
     if (name) updateDoc.name = name;
     if (studentLimit !== undefined) updateDoc.studentLimit = studentLimit;
     if (durationDays !== undefined) updateDoc.durationDays = durationDays;
+    if (serverCost !== undefined) updateDoc.serverCost = serverCost;
 
     const result = await db.collection('plans').updateOne({ id }, { $set: updateDoc });
 
