@@ -53,7 +53,34 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+{activeDemo.length > 0 && (
+      <section className="mt-16">
+        <div className="flex flex-wrap items-center justify-between gap-6">
+          <div>
+            <p className="text-sm uppercase tracking-[0.3em] text-sky-400">Demo Schools</p>
+            <h2 className="mt-3 text-3xl font-semibold text-yellow-600">Explore our demo setups</h2>
+          </div>
+          <p className="max-w-2xl text-sm leading-6 text-slate-400">
+            Try out these demo environments to see the platform&apos;s features in action.
+          </p>
+        </div>
 
+        <div className="mt-10 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+          {activeDemo.map((tenant) => (
+            <Link key={tenant.slug} href={`/${tenant.slug}`} className="group block rounded-[1.75rem] border border-slate-800 bg-slate-900 p-6 transition hover:-translate-y-1 hover:border-sky-400">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm uppercase tracking-[0.3em] text-sky-400">{tenant.plan}</p>
+                  <h3 className="mt-4 text-2xl font-semibold text-white">{tenant.name}</h3>
+                </div>
+                <div className="rounded-2xl bg-slate-800 px-3 py-2 text-sm text-slate-300">{tenant.city}</div>
+              </div>
+              <p className="mt-6 text-sm leading-6 text-slate-400">{tenant.description}</p>
+            </Link>
+          ))}
+        </div>
+      </section>
+      )}
       <section className="mt-16 grid gap-10 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="space-y-8">
           <div>
@@ -147,34 +174,7 @@ export default async function HomePage() {
       </section>
       )}
 
-      {activeDemo.length > 0 && (
-      <section className="mt-16">
-        <div className="flex flex-wrap items-center justify-between gap-6">
-          <div>
-            <p className="text-sm uppercase tracking-[0.3em] text-sky-400">Demo Schools</p>
-            <h2 className="mt-3 text-3xl font-semibold text-white">Explore our demo setups</h2>
-          </div>
-          <p className="max-w-2xl text-sm leading-6 text-slate-400">
-            Try out these demo environments to see the platform&apos;s features in action.
-          </p>
-        </div>
-
-        <div className="mt-10 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-          {activeDemo.map((tenant) => (
-            <Link key={tenant.slug} href={`/${tenant.slug}`} className="group block rounded-[1.75rem] border border-slate-800 bg-slate-900 p-6 transition hover:-translate-y-1 hover:border-sky-400">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm uppercase tracking-[0.3em] text-sky-400">{tenant.plan}</p>
-                  <h3 className="mt-4 text-2xl font-semibold text-white">{tenant.name}</h3>
-                </div>
-                <div className="rounded-2xl bg-slate-800 px-3 py-2 text-sm text-slate-300">{tenant.city}</div>
-              </div>
-              <p className="mt-6 text-sm leading-6 text-slate-400">{tenant.description}</p>
-            </Link>
-          ))}
-        </div>
-      </section>
-      )}
+      
 
       <section className="mt-16 grid gap-10 lg:grid-cols-2 items-stretch">
         <div className="rounded-[2rem] border border-slate-800 bg-gradient-to-br from-slate-900 to-slate-950 p-8 shadow-soft flex flex-col justify-center">

@@ -203,7 +203,7 @@ export async function updateTenantStatus(slug: string, status: 'active' | 'pendi
   }
 }
 
-export async function updateTenantDetails(slug: string, payload: { name: string; city: string; description: string; phone: string; authorityName: string; email: string; category: 'demo' | 'trusted' }) {
+export async function updateTenantDetails(slug: string, payload: { name: string; city: string; description: string; phone: string; authorityName: string; email: string; category: 'demo' | 'trusted'; plan: string }) {
   if (!process.env.MONGODB_URI) {
     return false;
   }

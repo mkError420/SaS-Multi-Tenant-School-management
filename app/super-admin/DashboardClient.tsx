@@ -53,7 +53,7 @@ export default function DashboardClient({
 
   const [viewTenant, setViewTenant] = useState<Tenant | null>(null);
   const [editTenantModal, setEditTenantModal] = useState<Tenant | null>(null);
-  const [tenantForm, setTenantForm] = useState<{ name: string; city: string; phone: string; authorityName: string; email: string; description: string; category: 'demo' | 'trusted' }>({ name: '', city: '', phone: '', authorityName: '', email: '', description: '', category: 'demo' });
+  const [tenantForm, setTenantForm] = useState<{ name: string; city: string; phone: string; authorityName: string; email: string; description: string; category: 'demo' | 'trusted'; plan: string }>({ name: '', city: '', phone: '', authorityName: '', email: '', description: '', category: 'demo', plan: '' });
   const [resetCredentialsModal, setResetCredentialsModal] = useState<Tenant | null>(null);
   const [credentialsForm, setCredentialsForm] = useState({ email: '', password: '' });
 
@@ -95,6 +95,7 @@ export default function DashboardClient({
       email: tenant.email || '',
       description: tenant.description || '',
       category: tenant.category || 'demo',
+      plan: tenant.plan || '',
     });
   };
 
@@ -1063,13 +1064,21 @@ export default function DashboardClient({
                 <span className="text-sm font-semibold text-slate-200">School Email</span>
                 <input required type="email" value={tenantForm.email} onChange={(e) => setTenantForm({ ...tenantForm, email: e.target.value })} className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white focus:border-sky-500 focus:outline-none" />
               </label>
-              <label className="block">
-                <span className="text-sm font-semibold text-slate-200">Category</span>
-                <select required value={tenantForm.category} onChange={(e) => setTenantForm({ ...tenantForm, category: e.target.value as 'demo' | 'trusted' })} className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white focus:border-sky-500 focus:outline-none">
-                  <option value="demo">Demo School</option>
-                  <option value="trusted">Trusted Organization</option>
-                </select>
-              </label>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="block">
+                  <span className="text-sm font-semibold text-slate-200">Category</span>
+                  <select required value={tenantForm.category} onChange={(e) => setTenantForm({ ...tenantForm, category: e.target.value as 'demo' | 'trusted' })} className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white focus:border-sky-500 focus:outline-none">
+                    <option value="demo">Demo School</option>
+                    <option value="trusted">Trusted Organization</option>
+                  </select>
+                </label>
+                <label className="block">
+                  <span className="text-sm font-semibold text-slate-200">Subscription Plan</span>
+                  <select required value={tenantForm.plan} onChange={(e) => setTenantForm({ ...tenantForm, plan: e.target.value })} className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white focus:border-sky-500 focus:outline-none">
+                    {plans.map(p => <option key={p.id} value={p.name}>{p.name} - ৳{p.price}/mo</option>)}
+                  </select>
+                </label>
+              </div>
               <label className="block">
                 <span className="text-sm font-semibold text-slate-200">Description</span>
                 <textarea required rows={3} value={tenantForm.description} onChange={(e) => setTenantForm({ ...tenantForm, description: e.target.value })} className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white focus:border-sky-500 focus:outline-none" />

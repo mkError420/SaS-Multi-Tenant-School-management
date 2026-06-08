@@ -17,7 +17,7 @@ export async function removeTenantAction(slug: string) {
   revalidatePath('/super-admin');
 }
 
-export async function editTenantDetailsAction(slug: string, payload: { name: string; city: string; description: string; phone: string; authorityName: string; email: string; category: 'demo' | 'trusted' }) {
+export async function editTenantDetailsAction(slug: string, payload: { name: string; city: string; description: string; phone: string; authorityName: string; email: string; category: 'demo' | 'trusted'; plan: string }) {
   await updateTenantDetails(slug, payload);
   revalidatePath('/super-admin');
 }
