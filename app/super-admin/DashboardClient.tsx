@@ -340,7 +340,7 @@ export default function DashboardClient({
   const trustedTenants = filteredTenants.filter(t => t.category === 'trusted' && t.status !== 'pending');
 
   const expiredTenants = tenants.filter(
-    (t) => t.status === 'active' && t.subscriptionExpiresAt && new Date(t.subscriptionExpiresAt) < new Date()
+    (t) => t.status === 'active' && t.category !== 'demo' && t.subscriptionExpiresAt && new Date(t.subscriptionExpiresAt) < new Date()
   );
 
   const pendingCount = tenants.filter(t => t.status === 'pending').length;
@@ -349,8 +349,8 @@ export default function DashboardClient({
   const filteredRevenueRecords = (billingRecords || []).filter(b => {
     if (!b.due) return false;
 
-    // Ensure the tenant still exists (exclude deleted tenants from the report)
-    const tenantExists = tenants.some(t => t.slug === b.tenantSlug);
+    // Ensure the tenant still exists and is not a demo school
+    const tenantExists = tenants.some(t => t.slug === b.tenantSlug && t.category !== 'demo');
     if (!tenantExists) return false;
 
     const date = new Date(b.due);

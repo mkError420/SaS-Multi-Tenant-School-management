@@ -693,15 +693,18 @@ export async function getAllBillingRecords() {
 
 export async function getPlatformAnalytics() {
   const tenants = await getAllTenants();
-  const totalStudents = tenants.reduce((sum, tenant) => sum + tenant.students, 0);
-  const totalTeachers = tenants.reduce((sum, tenant) => sum + tenant.teachers, 0);
-  const totalRevenue = tenants.reduce((sum, tenant) => sum + tenant.revenue, 0);
+  
+  const nonDemoTenants = tenants.filter(tenant => tenant.category !== 'demo');
+  
+  const totalStudents = nonDemoTenants.reduce((sum, tenant) => sum + tenant.students, 0);
+  const totalTeachers = nonDemoTenants.reduce((sum, tenant) => sum + tenant.teachers, 0);
+  const totalRevenue = nonDemoTenants.reduce((sum, tenant) => sum + tenant.revenue, 0);
 
   return {
-    totalSchools: tenants.length,
-    activeSchools: tenants.filter((tenant) => tenant.status === 'active').length,
-    pendingSchools: tenants.filter((tenant) => tenant.status === 'pending').length,
-    suspendedSchools: tenants.filter((tenant) => tenant.status === 'suspended').length,
+    totalSchools: nonDemoTenants.length,
+    activeSchools: nonDemoTenants.filter((tenant) => tenant.status === 'active').length,
+    pendingSchools: nonDemoTenants.filter((tenant) => tenant.status === 'pending').length,
+    suspendedSchools: nonDemoTenants.filter((tenant) => tenant.status === 'suspended').length,
     totalStudents,
     totalTeachers,
     totalRevenue,
