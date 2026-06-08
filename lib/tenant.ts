@@ -18,6 +18,9 @@ export type Tenant = {
   authorityName?: string;
   email?: string;
   category?: 'demo' | 'trusted';
+  paymentOption?: string;
+  paymentNumber?: string;
+  transactionId?: string;
 };
 
 const defaultTenants: Tenant[] = [
@@ -113,6 +116,9 @@ export async function getAllTenants() {
           authorityName: tenant.authorityName,
           email: tenant.email,
           category: tenant.category || 'demo',
+          paymentOption: tenant.paymentOption,
+          paymentNumber: tenant.paymentNumber,
+          transactionId: tenant.transactionId,
         };
       })
     );
@@ -168,6 +174,9 @@ export async function getTenantBySlug(slug: string) {
       authorityName: tenant.authorityName,
       email: tenant.email,
       category: tenant.category || 'demo',
+      paymentOption: tenant.paymentOption,
+      paymentNumber: tenant.paymentNumber,
+      transactionId: tenant.transactionId,
     } as Tenant;
   } catch (error) {
     console.error('Failed to fetch tenant from MongoDB:', error);
