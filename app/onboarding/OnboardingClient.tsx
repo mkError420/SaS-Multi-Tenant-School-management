@@ -33,16 +33,15 @@ export default function OnboardingClient({ plans }: { plans: PlanPackage[] }) {
     setMessage(null);
     
     // Generate slug from name if not provided
-    const payload = { ...form };
-    if (!payload.slug) {
-      payload.slug = payload.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+    let slug = form.slug;
+    if (!slug) {
+      slug = form.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
     }
-    payload.category = 'demo';
 
-    const submitPayload = { ...payload, adminEmail: form.email, adminPassword: Math.random().toString(36).slice(-10) };
+    const submitPayload = { ...form, slug, category: 'demo' as const, adminEmail: form.email, adminPassword: Math.random().toString(36).slice(-10) };
 
     startTransition(async () => {
-      const result = await submitOrderAction(submitPayload as any);
+      const result = await submitOrderAction(submitPayload);
       if (result.success) {
         setMessage({ text: 'Order submitted successfully! Our team will review and activate your portal soon.', type: 'success' });
         setForm({ name: '', slug: '', city: '', description: '', plan: plans[0]?.id || '', phone: '', authorityName: '', email: '' });
