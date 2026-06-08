@@ -5,6 +5,8 @@ import {
   setTenantStatus, 
   removeTenantAction, 
   editPlanAction, 
+  createPlanAction,
+  deletePlanAction,
   renewTenantSubscriptionAction,
   fetchInvoicesAction,
   addInvoiceAction,
@@ -31,6 +33,8 @@ export default function DashboardClient({
   const [isPending, startTransition] = useTransition();
   const [editingPlan, setEditingPlan] = useState<string | null>(null);
   const [planForm, setPlanForm] = useState({ name: '', price: 0, studentLimit: 0, durationDays: 30, serverCost: 0 });
+  const [isCreatingPlan, setIsCreatingPlan] = useState(false);
+  const [newPlanForm, setNewPlanForm] = useState({ name: '', description: '', price: 0, studentLimit: 0, durationDays: 30, serverCost: 0 });
   const [searchQuery, setSearchQuery] = useState('');
   
   const [invoiceModalTenant, setInvoiceModalTenant] = useState<Tenant | null>(null);
@@ -234,6 +238,23 @@ export default function DashboardClient({
       editPlanAction(id, Number(planForm.price), planForm.name, Number(planForm.studentLimit), Number(planForm.durationDays), Number(planForm.serverCost));
       setEditingPlan(null);
     });
+  };
+
+  const handleCreatePlan = (e: React.FormEvent) => {
+    e.preventDefault();
+    startTransition(() => {
+      createPlanAction(newPlanForm.name, newPlanForm.description, Number(newPlanForm.price), Number(newPlanForm.studentLimit), Number(newPlanForm.durationDays), Number(newPlanForm.serverCost));
+      setIsCreatingPlan(false);
+      setNewPlanForm({ name: '', description: '', price: 0, studentLimit: 0, durationDays: 30, serverCost: 0 });
+    });
+  };
+
+  const handleDeletePlan = (id: string) => {
+    if (confirm('Are you sure you want to delete this plan?')) {
+      startTransition(() => {
+        deletePlanAction(id);
+      });
+    }
   };
 
   const filteredTenants = tenants.filter((tenant) =>
@@ -555,7 +576,48 @@ export default function DashboardClient({
 
       {/* Plans Management */}
       <section className="rounded-3xl border border-slate-800 bg-slate-900/50 p-6">
-        <h2 className="mb-6 text-xl font-semibold text-white">Subscription Plans</h2>
+        <div className="mb-6 flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-white">Subscription Plans</h2>
+          <button onClick={() => setIsCreatingPlan(!isCreatingPlan)} className="rounded-lg bg-sky-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-sky-400">
+            {isCreatingPlan ? 'Cancel' : 'Add Plan'}
+          </button>
+        </div>
+
+        {isCreatingPlan && (
+          <form onSubmit={handleCreatePlan} className="mb-6 rounded-2xl border border-slate-800 bg-slate-950 p-5 space-y-4">
+            <h3 className="text-lg font-semibold text-white">Create New Plan</h3>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <label className="block">
+                <span className="text-xs font-semibold text-slate-300">Package Name</span>
+                <input required type="text" value={newPlanForm.name} onChange={e => setNewPlanForm({...newPlanForm, name: e.target.value})} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white focus:border-sky-500 focus:outline-none" placeholder="e.g. Pro Plan" />
+              </label>
+              <label className="block">
+                <span className="text-xs font-semibold text-slate-300">Server & Installation Cost</span>
+                <input required type="number" value={newPlanForm.serverCost} onChange={e => setNewPlanForm({...newPlanForm, serverCost: e.target.valueAsNumber || 0})} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white focus:border-sky-500 focus:outline-none" />
+              </label>
+              <label className="block">
+                <span className="text-xs font-semibold text-slate-300">Monthly Subscription</span>
+                <input required type="number" value={newPlanForm.price} onChange={e => setNewPlanForm({...newPlanForm, price: e.target.valueAsNumber || 0})} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white focus:border-sky-500 focus:outline-none" />
+              </label>
+              <label className="block">
+                <span className="text-xs font-semibold text-slate-300">Student Limit</span>
+                <input required type="number" value={newPlanForm.studentLimit} onChange={e => setNewPlanForm({...newPlanForm, studentLimit: e.target.valueAsNumber || 0})} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white focus:border-sky-500 focus:outline-none" placeholder="e.g. 500" />
+              </label>
+              <label className="block">
+                <span className="text-xs font-semibold text-slate-300">Duration (Days)</span>
+                <input required type="number" value={newPlanForm.durationDays} onChange={e => setNewPlanForm({...newPlanForm, durationDays: e.target.valueAsNumber || 0})} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white focus:border-sky-500 focus:outline-none" />
+              </label>
+              <label className="block sm:col-span-2 lg:col-span-1">
+                <span className="text-xs font-semibold text-slate-300">Description</span>
+                <input required type="text" value={newPlanForm.description} onChange={e => setNewPlanForm({...newPlanForm, description: e.target.value})} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white focus:border-sky-500 focus:outline-none" placeholder="Short description of the plan" />
+              </label>
+            </div>
+            <div className="flex justify-end pt-2">
+              <button type="submit" disabled={isPending} className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400 disabled:opacity-50">Create Plan</button>
+            </div>
+          </form>
+        )}
+
         <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950">
           <table className="w-full text-left text-sm text-slate-300">
             <thead className="border-b border-slate-800 bg-slate-900 text-slate-400">
@@ -591,7 +653,8 @@ export default function DashboardClient({
                       <td className="px-4 py-3">{plan.studentLimit}</td>
                       <td className="px-4 py-3">{plan.durationDays || 30} Days</td>
                       <td className="px-4 py-3 text-right">
-                        <button onClick={() => handleEditPlan(plan)} className="text-sky-400 hover:text-sky-300">Edit</button>
+                        <button onClick={() => handleEditPlan(plan)} className="mr-3 text-sky-400 hover:text-sky-300">Edit</button>
+                        <button onClick={() => handleDeletePlan(plan.id)} className="text-red-400 hover:text-red-300">Delete</button>
                       </td>
                     </>
                   )}

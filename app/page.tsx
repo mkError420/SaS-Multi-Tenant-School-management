@@ -81,7 +81,7 @@ export default async function HomePage() {
                   <td className="px-6 py-4 text-center">
                     <Link 
                       href={`/onboarding?plan=${plan.id}`}
-                      className="inline-block rounded-full bg-sky-500 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-sky-400"
+                      className="inline-block rounded-2xl border border-slate-700 bg-slate-900 px-4 py-2 text-xs font-semibold text-white transition hover:border-sky-500 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-sky-400"
                     >
                       Order Now
                     </Link>

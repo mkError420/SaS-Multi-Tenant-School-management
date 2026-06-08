@@ -389,6 +389,34 @@ export async function updatePlan(id: string, price: number, name?: string, stude
   }
 }
 
+export async function createPlan(name: string, description: string, price: number, studentLimit: number, durationDays: number, serverCost?: number) {
+  if (!process.env.MONGODB_URI) return false;
+  try {
+    const db = await getDatabase();
+    const id = `plan-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now()}`;
+    const newPlan = { id, name, description, price, studentLimit, durationDays, serverCost };
+    await db.collection('plans').insertOne(newPlan);
+    return true;
+  } catch (error) {
+    console.error('Failed to create plan:', error);
+    return false;
+  }
+}
+
+export async function deletePlan(id: string) {
+  if (!process.env.MONGODB_URI) return false;
+  try {
+    const db = await getDatabase();
+    let query: any = { id };
+    if (ObjectId.isValid(id)) query = { $or: [{ id }, { _id: new ObjectId(id) }] };
+    const result = await db.collection('plans').deleteOne(query);
+    return result.deletedCount > 0;
+  } catch (error) {
+    console.error('Failed to delete plan:', error);
+    return false;
+  }
+}
+
 export async function getTenantAcademicSetup(tenantSlug: string) {
   if (!process.env.MONGODB_URI) {
     return defaultAcademicSetup;
