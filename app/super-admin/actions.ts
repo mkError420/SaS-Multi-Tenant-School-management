@@ -1,7 +1,7 @@
 'use server';
 
 import { updateTenantStatus, deleteTenant, renewTenantSubscription, updateTenantDetails } from '../../lib/tenant';
-import { updatePlan, createPlan, deletePlan, getTenantBilling, createTenantInvoice, updateTenantInvoice, deleteTenantInvoice, updatePlatformSettings } from '../../lib/school';
+import { updatePlan, createPlan, deletePlan, getTenantBilling, createTenantInvoice, updateTenantInvoice, deleteTenantInvoice, updatePlatformSettings, updateContactMessageStatus, deleteContactMessage } from '../../lib/school';
 import { resetTenantAdminCredentials } from '../../lib/auth';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
@@ -26,6 +26,16 @@ export async function editPlanAction(id: string, price: number, name: string, li
   await updatePlan(id, price, name, limit, durationDays, serverCost);
   revalidatePath('/super-admin');
   revalidatePath('/');
+}
+
+export async function updateContactMessageStatusAction(id: string, status: 'read' | 'unread') {
+  await updateContactMessageStatus(id, status);
+  revalidatePath('/super-admin');
+}
+
+export async function deleteContactMessageAction(id: string) {
+  await deleteContactMessage(id);
+  revalidatePath('/super-admin');
 }
 
 export async function createPlanAction(name: string, description: string, price: number, limit: number, durationDays: number, serverCost: number) {

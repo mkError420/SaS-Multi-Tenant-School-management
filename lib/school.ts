@@ -110,6 +110,16 @@ export type ParentPortalData = {
   teacherContact: string;
 };
 
+export type ContactMessage = {
+  id: string;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  date: string;
+  status: 'unread' | 'read';
+};
+
 export type PlatformSettings = {
   platformName: string;
   supportEmail: string;
@@ -283,6 +293,64 @@ export async function updatePlatformSettings(settings: Partial<PlatformSettings>
     return true;
   } catch (error) {
     console.error('Failed to update settings:', error);
+    return false;
+  }
+}
+
+export async function getContactMessages() {
+  if (!process.env.MONGODB_URI) return [];
+  try {
+    const db = await getDatabase();
+    const records = await db.collection('contactMessages').find().sort({ date: -1 }).toArray();
+    return records.map((r: any) => ({
+      id: r._id.toString(),
+      name: r.name,
+      email: r.email,
+      subject: r.subject,
+      message: r.message,
+      date: r.date,
+      status: r.status,
+    })) as ContactMessage[];
+  } catch (error) {
+    console.error('Failed to load contact messages:', error);
+    return [];
+  }
+}
+
+export async function createContactMessage(payload: { name: string; email: string; subject: string; message: string; }) {
+  if (!process.env.MONGODB_URI) return false;
+  try {
+    const db = await getDatabase();
+    await db.collection('contactMessages').insertOne({ ...payload, date: new Date().toISOString(), status: 'unread' });
+    return true;
+  } catch (error) {
+    console.error('Failed to create contact message:', error);
+    return false;
+  }
+}
+
+export async function updateContactMessageStatus(id: string, status: 'read' | 'unread') {
+  if (!process.env.MONGODB_URI) return false;
+  try {
+    const db = await getDatabase();
+    let query: any = { id };
+    if (ObjectId.isValid(id)) query = { $or: [{ id }, { _id: new ObjectId(id) }] };
+    const result = await db.collection('contactMessages').updateOne(query, { $set: { status } });
+    return result.modifiedCount > 0;
+  } catch (error) {
+    return false;
+  }
+}
+
+export async function deleteContactMessage(id: string) {
+  if (!process.env.MONGODB_URI) return false;
+  try {
+    const db = await getDatabase();
+    let query: any = { id };
+    if (ObjectId.isValid(id)) query = { $or: [{ id }, { _id: new ObjectId(id) }] };
+    const result = await db.collection('contactMessages').deleteOne(query);
+    return result.deletedCount > 0;
+  } catch (error) {
     return false;
   }
 }

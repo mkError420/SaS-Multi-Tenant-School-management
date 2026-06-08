@@ -1,5 +1,5 @@
 import { getAllTenants } from '../../lib/tenant';
-import { getPlatformAnalytics, getSubscriptionPlans, getAllBillingRecords, getPlatformSettings } from '../../lib/school';
+import { getPlatformAnalytics, getSubscriptionPlans, getAllBillingRecords, getPlatformSettings, getContactMessages } from '../../lib/school';
 import DashboardClient from './DashboardClient';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
@@ -32,6 +32,7 @@ export default async function SuperAdminPage() {
   const plans = await getSubscriptionPlans();
   const billingRecords = await getAllBillingRecords();
   const settings = await getPlatformSettings();
+  const contactMessages = await getContactMessages();
 
   return (
     <main className="mx-auto max-w-7xl px-6 py-10 lg:px-8">
@@ -52,7 +53,7 @@ export default async function SuperAdminPage() {
         </div>
       </div>
       
-      <DashboardClient tenants={tenants} analytics={analytics} plans={plans} billingRecords={billingRecords} initialSettings={settings} />
+      <DashboardClient tenants={tenants} analytics={analytics} plans={plans} billingRecords={billingRecords} initialSettings={settings} contactMessages={contactMessages} />
     </main>
   );
 }

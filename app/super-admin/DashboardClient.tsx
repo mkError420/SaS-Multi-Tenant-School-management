@@ -14,10 +14,12 @@ import {
   removeInvoiceAction,
   editTenantDetailsAction,
   resetCredentialsAction,
-  updateSettingsAction
+  updateSettingsAction,
+  updateContactMessageStatusAction,
+  deleteContactMessageAction
 } from './actions';
 import type { Tenant } from '../../lib/tenant';
-import type { PlatformAnalytics, PlanPackage, BillingRecord, PlatformSettings } from '../../lib/school';
+import type { PlatformAnalytics, PlanPackage, BillingRecord, PlatformSettings, ContactMessage } from '../../lib/school';
 import Link from 'next/link';
 
 export default function DashboardClient({
@@ -26,14 +28,17 @@ export default function DashboardClient({
   plans,
   billingRecords = [],
   initialSettings,
+  contactMessages = [],
 }: {
   tenants: Tenant[];
   analytics: PlatformAnalytics;
   plans: PlanPackage[];
   billingRecords?: BillingRecord[];
   initialSettings: PlatformSettings;
+  contactMessages?: ContactMessage[];
 }) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'tenants' | 'plans' | 'settings'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'tenants' | 'tenants-pending' | 'tenants-trusted' | 'tenants-demo' | 'plans' | 'settings' | 'contact'>('overview');
+  const [isTenantMenuOpen, setIsTenantMenuOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [editingPlan, setEditingPlan] = useState<string | null>(null);
   const [planForm, setPlanForm] = useState({ name: '', price: 0, studentLimit: 0, durationDays: 30, serverCost: 0 });
@@ -274,6 +279,20 @@ export default function DashboardClient({
     });
   };
 
+  const handleMarkMessageRead = (id: string, currentStatus: 'read' | 'unread') => {
+    startTransition(() => {
+      updateContactMessageStatusAction(id, currentStatus === 'unread' ? 'read' : 'unread');
+    });
+  };
+
+  const handleDeleteMessage = (id: string) => {
+    if (confirm('Are you sure you want to delete this message?')) {
+      startTransition(() => {
+        deleteContactMessageAction(id);
+      });
+    }
+  };
+
   const filteredTenants = tenants.filter((tenant) =>
     tenant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     tenant.slug.toLowerCase().includes(searchQuery.toLowerCase())
@@ -286,6 +305,9 @@ export default function DashboardClient({
   const expiredTenants = tenants.filter(
     (t) => t.status === 'active' && t.subscriptionExpiresAt && new Date(t.subscriptionExpiresAt) < new Date()
   );
+
+  const pendingCount = tenants.filter(t => t.status === 'pending').length;
+  const unreadContactCount = (contactMessages || []).filter(m => m.status === 'unread').length;
 
   const filteredRevenueRecords = (billingRecords || []).filter(b => {
     if (!b.due) return false;
@@ -441,9 +463,53 @@ export default function DashboardClient({
       <aside className="w-full shrink-0 lg:w-64">
         <nav className="flex flex-col gap-2 rounded-3xl border border-slate-800 bg-slate-900/50 p-4 sticky top-6">
           <button onClick={() => setActiveTab('overview')} className={`text-left px-4 py-3 rounded-2xl text-sm font-semibold transition ${activeTab === 'overview' ? 'bg-sky-500 text-slate-950' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>Overview</button>
-          <button onClick={() => setActiveTab('tenants')} className={`text-left px-4 py-3 rounded-2xl text-sm font-semibold transition ${activeTab === 'tenants' ? 'bg-sky-500 text-slate-950' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>Tenant Management</button>
+          
+          <div className="flex flex-col gap-1">
+            <button 
+              onClick={() => {
+                if (!activeTab.startsWith('tenants')) setActiveTab('tenants');
+                setIsTenantMenuOpen(!isTenantMenuOpen);
+              }} 
+              className={`flex items-center justify-between w-full text-left px-4 py-3 rounded-2xl text-sm font-semibold transition ${activeTab.startsWith('tenants') ? 'bg-sky-500 text-slate-950' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+            >
+              <div className="flex items-center gap-2">
+                <span>Tenant Management</span>
+                {pendingCount > 0 && (
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-slate-950">
+                    {pendingCount}
+                  </span>
+                )}
+              </div>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className={`h-4 w-4 transition-transform ${isTenantMenuOpen ? 'rotate-180' : ''}`}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+              </svg>
+            </button>
+            {isTenantMenuOpen && (
+              <div className="flex flex-col gap-1 pl-3 mt-1">
+                <button onClick={() => setActiveTab('tenants-pending')} className={`flex items-center justify-between text-left px-4 py-2 rounded-xl text-xs font-semibold transition ${activeTab === 'tenants-pending' ? 'bg-slate-800 text-sky-400' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'}`}>
+                  <span>Pending Orders</span>
+                  {pendingCount > 0 && (
+                    <span className="flex h-4 w-4 items-center justify-center rounded-full bg-amber-500/20 text-[10px] text-amber-500">
+                      {pendingCount}
+                    </span>
+                  )}
+                </button>
+                <button onClick={() => setActiveTab('tenants-trusted')} className={`text-left px-4 py-2 rounded-xl text-xs font-semibold transition ${activeTab === 'tenants-trusted' ? 'bg-slate-800 text-sky-400' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'}`}>Trusted Organizations</button>
+                <button onClick={() => setActiveTab('tenants-demo')} className={`text-left px-4 py-2 rounded-xl text-xs font-semibold transition ${activeTab === 'tenants-demo' ? 'bg-slate-800 text-sky-400' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'}`}>Demo Schools</button>
+              </div>
+            )}
+          </div>
+
           <button onClick={() => setActiveTab('plans')} className={`text-left px-4 py-3 rounded-2xl text-sm font-semibold transition ${activeTab === 'plans' ? 'bg-sky-500 text-slate-950' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>Subscription Plans</button>
           <button onClick={() => setActiveTab('settings')} className={`text-left px-4 py-3 rounded-2xl text-sm font-semibold transition ${activeTab === 'settings' ? 'bg-sky-500 text-slate-950' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>Platform Settings</button>
+          <button onClick={() => setActiveTab('contact')} className={`flex items-center justify-between text-left px-4 py-3 rounded-2xl text-sm font-semibold transition ${activeTab === 'contact' ? 'bg-sky-500 text-slate-950' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+            <span>Contact Messages</span>
+            {unreadContactCount > 0 && (
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-slate-950">
+                {unreadContactCount}
+              </span>
+            )}
+          </button>
         </nav>
       </aside>
 
@@ -507,13 +573,17 @@ export default function DashboardClient({
           </div>
         )}
 
-        {activeTab === 'tenants' && (
+        {activeTab.startsWith('tenants') && (
           <div className="space-y-12 animate-in fade-in duration-300">
       {/* Tenants Table */}
       <section className="rounded-3xl border border-slate-800 bg-slate-900/50 p-6">
         <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <div className="flex flex-wrap items-center gap-4">
-            <h2 className="text-xl font-semibold text-white">Tenant Management</h2>
+            <h2 className="text-xl font-semibold text-white">
+              {activeTab === 'tenants-pending' ? 'Pending Orders' : 
+               activeTab === 'tenants-trusted' ? 'Trusted Organizations' : 
+               activeTab === 'tenants-demo' ? 'Demo Schools' : 'Tenant Management'}
+            </h2>
             <div className="flex items-center gap-2">
               <button onClick={handleDownloadTenantsCSV} className="rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-semibold text-sky-400 transition hover:bg-slate-700">Export CSV</button>
               <button onClick={handlePrintTenantsPDF} className="rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-semibold text-sky-400 transition hover:bg-slate-700">Print PDF</button>
@@ -529,9 +599,9 @@ export default function DashboardClient({
         </div>
         
         {[
-          { title: 'Pending Orders', data: pendingTenants },
-          { title: 'Trusted Organizations', data: trustedTenants },
-          { title: 'Demo Schools', data: demoTenants }
+          ...(activeTab === 'tenants' || activeTab === 'tenants-pending' ? [{ title: 'Pending Orders', data: pendingTenants }] : []),
+          ...(activeTab === 'tenants' || activeTab === 'tenants-trusted' ? [{ title: 'Trusted Organizations', data: trustedTenants }] : []),
+          ...(activeTab === 'tenants' || activeTab === 'tenants-demo' ? [{ title: 'Demo Schools', data: demoTenants }] : [])
         ].map((section) => (
           <div key={section.title} className="mt-8 border-t border-slate-800 pt-6 first:border-0 first:pt-0">
             <h3 className="mb-4 text-lg font-semibold text-white">{section.title} ({section.data.length})</h3>
@@ -749,6 +819,51 @@ export default function DashboardClient({
                   </button>
                 </div>
               </form>
+            </section>
+          </div>
+        )}
+
+        {activeTab === 'contact' && (
+          <div className="space-y-12 animate-in fade-in duration-300">
+            <section className="rounded-3xl border border-slate-800 bg-slate-900/50 p-6">
+              <h2 className="mb-6 text-xl font-semibold text-white">Contact Messages</h2>
+              <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950">
+                <table className="w-full text-left text-sm text-slate-300">
+                  <thead className="border-b border-slate-800 bg-slate-900 text-slate-400">
+                    <tr>
+                      <th className="px-4 py-3 font-medium">Date</th>
+                      <th className="px-4 py-3 font-medium">Details</th>
+                      <th className="px-4 py-3 font-medium">Message</th>
+                      <th className="px-4 py-3 text-right font-medium">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800">
+                    {(contactMessages || []).map((msg) => (
+                      <tr key={msg.id} className={`transition hover:bg-slate-900/50 ${msg.status === 'unread' ? 'bg-slate-900/40' : ''}`}>
+                        <td className="px-4 py-4 align-top whitespace-nowrap">
+                          {new Date(msg.date).toLocaleDateString()}<br/>
+                          <span className="text-xs text-slate-500">{new Date(msg.date).toLocaleTimeString()}</span>
+                        </td>
+                        <td className="px-4 py-4 align-top">
+                          <p className={`font-semibold ${msg.status === 'unread' ? 'text-white' : 'text-slate-300'}`}>{msg.name}</p>
+                          <p className="text-xs text-sky-400">{msg.email}</p>
+                        </td>
+                        <td className="px-4 py-4 align-top min-w-[300px]">
+                          <p className={`text-sm font-semibold mb-1 ${msg.status === 'unread' ? 'text-white' : 'text-slate-300'}`}>{msg.subject}</p>
+                          <p className="text-xs text-slate-400 leading-relaxed">{msg.message}</p>
+                        </td>
+                        <td className="px-4 py-4 align-top text-right space-x-3 whitespace-nowrap">
+                          <button onClick={() => handleMarkMessageRead(msg.id, msg.status)} disabled={isPending} className="text-xs font-semibold text-sky-400 hover:text-sky-300 disabled:opacity-50">{msg.status === 'unread' ? 'Mark Read' : 'Mark Unread'}</button>
+                          <button onClick={() => handleDeleteMessage(msg.id)} disabled={isPending} className="text-xs font-semibold text-red-400 hover:text-red-300 disabled:opacity-50">Delete</button>
+                        </td>
+                      </tr>
+                    ))}
+                    {(!contactMessages || contactMessages.length === 0) && (
+                      <tr><td colSpan={4} className="py-8 text-center text-slate-500">No contact messages received yet.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </section>
           </div>
         )}

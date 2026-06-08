@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getAllTenants } from '../lib/tenant';
 import { getSubscriptionPlans } from '../lib/school';
+import ContactWidget from './ContactWidget';
 
 export const metadata: Metadata = {
   title: 'Zass SaaS',
@@ -117,11 +118,11 @@ export default async function HomePage() {
       <section className="mt-16">
         <div className="flex flex-wrap items-center justify-between gap-6">
           <div>
-            <p className="text-sm uppercase tracking-[0.3em] text-sky-400">Trusted Organizations</p>
-            <h2 className="mt-3 text-3xl font-semibold text-white">Join our trusted network</h2>
+            <p className="text-sm uppercase tracking-[0.3em] text-sky-400">Running Trusted Schools</p>
+            <h2 className="mt-3 text-3xl font-semibold text-white">They Are Our Trusted Partner Schools</h2>
           </div>
           <p className="max-w-2xl text-sm leading-6 text-slate-400">
-            Visit our actively running trusted school portals and see how the platform securely isolates tenant data while delivering a premium experience.
+            These schools have chosen our platform to power their operations and provide a seamless experience for their communities.
           </p>
         </div>
 
@@ -170,6 +171,27 @@ export default async function HomePage() {
         </div>
       </section>
       )}
+
+      <section className="mt-16 grid gap-10 lg:grid-cols-2 items-stretch">
+        <div className="rounded-[2rem] border border-slate-800 bg-gradient-to-br from-slate-900 to-slate-950 p-8 shadow-soft flex flex-col justify-center">
+          <p className="text-sm uppercase tracking-[0.3em] text-sky-400">Get in Touch</p>
+          <h2 className="mt-3 text-3xl font-semibold text-white">We'd love to hear from you</h2>
+          <p className="mt-4 text-sm leading-6 text-slate-400">
+            Whether you have a question about features, pricing, need a demo, or anything else, our team is ready to answer all your questions.
+          </p>
+          <div className="mt-8 space-y-4">
+            <div className="flex items-center gap-4 text-slate-300">
+              <svg className="w-6 h-6 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+              <span>support@zass.com</span>
+            </div>
+            <div className="flex items-center gap-4 text-slate-300">
+              <svg className="w-6 h-6 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+              <span>+8801572491828</span>
+            </div>
+          </div>
+        </div>
+        <ContactWidget />
+      </section>
 
       <a
         href="https://wa.me/8801572491828"
