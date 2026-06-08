@@ -16,8 +16,8 @@ let clientPromise: Promise<MongoClient>;
 if (uri) {
   const options = { 
     serverApi: { version: '1' as const },
-    serverSelectionTimeoutMS: 5000,
-    connectTimeoutMS: 5000,
+    serverSelectionTimeoutMS: 10000,
+    connectTimeoutMS: 10000,
   };
   if (process.env.NODE_ENV === 'development') {
     if (!globalThis._mongoClientPromise) {
