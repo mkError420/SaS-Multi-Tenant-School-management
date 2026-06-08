@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getAllTenants } from '../lib/tenant';
-import { getSubscriptionPlans, getPlatformSettings } from '../lib/school';
+import { getSubscriptionPlans, getPlatformSettings, getHeroImages } from '../lib/school';
 import ContactWidget from './ContactWidget';
+import HeroCarousel from './HeroCarousel';
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getPlatformSettings();
@@ -15,6 +16,8 @@ export default async function HomePage() {
   const tenants = await getAllTenants();
   const plans = await getSubscriptionPlans();
   const settings = await getPlatformSettings();
+  const heroImages = await getHeroImages();
+  const activeHeroImages = heroImages.filter((i) => i.isActive);
   
   const activeTrusted = tenants.filter(t => t.status === 'active' && t.category === 'trusted');
   const activeDemo = tenants.filter(t => t.status === 'active' && t.category === 'demo');
@@ -40,19 +43,28 @@ export default async function HomePage() {
           </div>
         </div>
 
-        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:mt-0 lg:w-full lg:max-w-[420px]">
-          <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 text-center">
-            <p className="text-sm uppercase tracking-[0.3em] text-sky-400">Trusted by</p>
-            <p className="mt-3 text-4xl font-semibold text-white">{activeTrusted.length}</p>
-            <p className="mt-3 text-sm leading-6 text-slate-400">trusted organizations running on our platform</p>
-          </div>
-          <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 text-center">
-            <p className="text-sm uppercase tracking-[0.3em] text-sky-400">Built for</p>
-            <p className="mt-3 text-4xl font-semibold text-white">School leaders</p>
-            <p className="mt-3 text-sm leading-6 text-slate-400">manage students, teachers, attendance, and billing from one place</p>
+        <div className="mt-10 flex flex-col gap-6 lg:mt-0 lg:w-full lg:max-w-[480px]">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 text-center">
+              <p className="text-sm uppercase tracking-[0.3em] text-sky-400">Trusted by</p>
+              <p className="mt-3 text-4xl font-semibold text-white">{activeTrusted.length}</p>
+              <p className="mt-3 text-sm leading-6 text-slate-400">trusted organizations</p>
+            </div>
+            <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 text-center">
+              <p className="text-sm uppercase tracking-[0.3em] text-sky-400">Built for</p>
+              <p className="mt-3 text-4xl font-semibold text-white">Schools</p>
+              <p className="mt-3 text-sm leading-6 text-slate-400">manage everything centrally</p>
+            </div>
           </div>
         </div>
       </section>
+
+      {activeHeroImages.length > 0 && (
+        <section className="mt-10 lg:mt-16">
+          <HeroCarousel images={activeHeroImages} />
+        </section>
+      )}
+
 {activeDemo.length > 0 && (
       <section className="mt-16">
         <div className="flex flex-wrap items-center justify-between gap-6">

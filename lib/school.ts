@@ -127,6 +127,14 @@ export type PlatformSettings = {
   maintenanceMode: boolean;
 };
 
+export type HeroImage = {
+  id: string;
+  url: string;
+  caption: string;
+  isActive: boolean;
+  dateAdded: string;
+};
+
 const defaultPlatformSettings: PlatformSettings = {
   platformName: 'Zass SaaS',
   supportEmail: 'support@zass.com',
@@ -269,6 +277,50 @@ export async function createTenantStudent(tenantSlug: string, name: string, grad
   } catch (error) {
     return false;
   }
+}
+
+export async function getHeroImages() {
+  if (!process.env.MONGODB_URI) return [];
+  try {
+    const db = await getDatabase();
+    const records = await db.collection('heroImages').find().sort({ dateAdded: -1 }).toArray();
+    return records.map((r: any) => ({
+      id: r._id.toString(),
+      url: r.url,
+      caption: r.caption,
+      isActive: r.isActive,
+      dateAdded: r.dateAdded,
+    })) as HeroImage[];
+  } catch (error) {
+    return [];
+  }
+}
+
+export async function createHeroImage(payload: { url: string; caption: string }) {
+  if (!process.env.MONGODB_URI) return false;
+  try {
+    const db = await getDatabase();
+    await db.collection('heroImages').insertOne({ ...payload, isActive: true, dateAdded: new Date().toISOString() });
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+export async function updateHeroImageStatus(id: string, isActive: boolean) {
+  if (!process.env.MONGODB_URI) return false;
+  const db = await getDatabase();
+  let query: any = { id };
+  if (ObjectId.isValid(id)) query = { $or: [{ id }, { _id: new ObjectId(id) }] };
+  return (await db.collection('heroImages').updateOne(query, { $set: { isActive } })).modifiedCount > 0;
+}
+
+export async function deleteHeroImage(id: string) {
+  if (!process.env.MONGODB_URI) return false;
+  const db = await getDatabase();
+  let query: any = { id };
+  if (ObjectId.isValid(id)) query = { $or: [{ id }, { _id: new ObjectId(id) }] };
+  return (await db.collection('heroImages').deleteOne(query)).deletedCount > 0;
 }
 
 export async function getPlatformSettings() {

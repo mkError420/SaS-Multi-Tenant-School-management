@@ -1,7 +1,7 @@
 'use server';
 
 import { updateTenantStatus, deleteTenant, renewTenantSubscription, updateTenantDetails } from '../../lib/tenant';
-import { updatePlan, createPlan, deletePlan, getTenantBilling, createTenantInvoice, updateTenantInvoice, deleteTenantInvoice, updatePlatformSettings, updateContactMessageStatus, deleteContactMessage } from '../../lib/school';
+import { updatePlan, createPlan, deletePlan, getTenantBilling, createTenantInvoice, updateTenantInvoice, deleteTenantInvoice, updatePlatformSettings, updateContactMessageStatus, deleteContactMessage, createHeroImage, updateHeroImageStatus, deleteHeroImage } from '../../lib/school';
 import { resetTenantAdminCredentials } from '../../lib/auth';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
@@ -24,6 +24,24 @@ export async function editTenantDetailsAction(slug: string, payload: { name: str
 
 export async function editPlanAction(id: string, price: number, name: string, limit: number, durationDays: number, serverCost: number) {
   await updatePlan(id, price, name, limit, durationDays, serverCost);
+  revalidatePath('/super-admin');
+  revalidatePath('/');
+}
+
+export async function createHeroImageAction(url: string, caption: string) {
+  await createHeroImage({ url, caption });
+  revalidatePath('/super-admin');
+  revalidatePath('/');
+}
+
+export async function updateHeroImageStatusAction(id: string, isActive: boolean) {
+  await updateHeroImageStatus(id, isActive);
+  revalidatePath('/super-admin');
+  revalidatePath('/');
+}
+
+export async function deleteHeroImageAction(id: string) {
+  await deleteHeroImage(id);
   revalidatePath('/super-admin');
   revalidatePath('/');
 }

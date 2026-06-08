@@ -16,11 +16,23 @@ import {
   resetCredentialsAction,
   updateSettingsAction,
   updateContactMessageStatusAction,
-  deleteContactMessageAction
+  deleteContactMessageAction,
+  createHeroImageAction,
+  updateHeroImageStatusAction,
+  deleteHeroImageAction
 } from './actions';
 import type { Tenant } from '../../lib/tenant';
-import type { PlatformAnalytics, PlanPackage, BillingRecord, PlatformSettings, ContactMessage } from '../../lib/school';
+import type { PlatformAnalytics, PlanPackage, BillingRecord, PlatformSettings, ContactMessage, HeroImage } from '../../lib/school';
 import Link from 'next/link';
+
+function getDriveDirectLink(url: string) {
+  if (url.startsWith('data:image')) return url;
+  const match = url.match(/\/(?:d|file\/d)\/([a-zA-Z0-9_-]+)/) || url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if (match && match[1]) {
+    return `https://lh3.googleusercontent.com/d/${match[1]}`;
+  }
+  return url;
+}
 
 export default function DashboardClient({
   tenants,
@@ -29,6 +41,7 @@ export default function DashboardClient({
   billingRecords = [],
   initialSettings,
   contactMessages = [],
+  heroImages = [],
 }: {
   tenants: Tenant[];
   analytics: PlatformAnalytics;
@@ -36,8 +49,9 @@ export default function DashboardClient({
   billingRecords?: BillingRecord[];
   initialSettings: PlatformSettings;
   contactMessages?: ContactMessage[];
+  heroImages?: HeroImage[];
 }) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'tenants' | 'tenants-pending' | 'tenants-trusted' | 'tenants-demo' | 'plans' | 'settings' | 'contact'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'tenants' | 'tenants-pending' | 'tenants-trusted' | 'tenants-demo' | 'plans' | 'settings' | 'contact' | 'carousel'>('overview');
   const [isTenantMenuOpen, setIsTenantMenuOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [editingPlan, setEditingPlan] = useState<string | null>(null);
@@ -62,6 +76,9 @@ export default function DashboardClient({
 
   const [settingsForm, setSettingsForm] = useState(initialSettings);
   const [settingsMessage, setSettingsMessage] = useState<{ text: string, type: 'error' | 'success' } | null>(null);
+
+  const [isCreatingHero, setIsCreatingHero] = useState(false);
+  const [newHeroForm, setNewHeroForm] = useState({ url: '', caption: '' });
 
   const handleStatusChange = (slug: string, status: 'active' | 'pending' | 'suspended') => {
     startTransition(() => {
@@ -294,6 +311,25 @@ export default function DashboardClient({
     }
   };
 
+  const handleCreateHero = (e: React.FormEvent) => {
+    e.preventDefault();
+    startTransition(() => {
+      createHeroImageAction(newHeroForm.url, newHeroForm.caption);
+      setIsCreatingHero(false);
+      setNewHeroForm({ url: '', caption: '' });
+    });
+  };
+
+  const handleToggleHero = (id: string, current: boolean) => {
+    startTransition(() => updateHeroImageStatusAction(id, !current));
+  };
+
+  const handleDeleteHero = (id: string) => {
+    if (confirm('Are you sure you want to delete this image?')) {
+      startTransition(() => deleteHeroImageAction(id));
+    }
+  };
+
   const filteredTenants = tenants.filter((tenant) =>
     tenant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     tenant.slug.toLowerCase().includes(searchQuery.toLowerCase())
@@ -502,6 +538,7 @@ export default function DashboardClient({
           </div>
 
           <button onClick={() => setActiveTab('plans')} className={`text-left px-4 py-3 rounded-2xl text-sm font-semibold transition ${activeTab === 'plans' ? 'bg-sky-500 text-slate-950' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>Subscription Plans</button>
+          <button onClick={() => setActiveTab('carousel')} className={`text-left px-4 py-3 rounded-2xl text-sm font-semibold transition ${activeTab === 'carousel' ? 'bg-sky-500 text-slate-950' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>Hero Carousel</button>
           <button onClick={() => setActiveTab('contact')} className={`flex items-center justify-between text-left px-4 py-3 rounded-2xl text-sm font-semibold transition ${activeTab === 'contact' ? 'bg-sky-500 text-slate-950' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
             <span>Contact Messages</span>
             {unreadContactCount > 0 && (
@@ -862,6 +899,78 @@ export default function DashboardClient({
                     {(!contactMessages || contactMessages.length === 0) && (
                       <tr><td colSpan={4} className="py-8 text-center text-slate-500">No contact messages received yet.</td></tr>
                     )}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        )}
+
+        {activeTab === 'carousel' && (
+          <div className="space-y-12 animate-in fade-in duration-300">
+            <section className="rounded-3xl border border-slate-800 bg-slate-900/50 p-6">
+              <div className="mb-6 flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-white">Hero Carousel Images</h2>
+                <button onClick={() => setIsCreatingHero(!isCreatingHero)} className="rounded-lg bg-sky-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-sky-400">
+                  {isCreatingHero ? 'Cancel' : 'Add Image'}
+                </button>
+              </div>
+
+              {isCreatingHero && (
+                <form onSubmit={handleCreateHero} className="mb-6 rounded-2xl border border-slate-800 bg-slate-950 p-5 space-y-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <label className="block">
+                      <span className="text-xs font-semibold text-slate-300">Upload Image (Max 1MB)</span>
+                      <input required type="file" accept="image/*" onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          if (file.size > 1024 * 1024) {
+                            alert("File size must be under 1MB.");
+                            e.target.value = '';
+                            return;
+                          }
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            setNewHeroForm({...newHeroForm, url: reader.result as string});
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }} className="mt-1 w-full cursor-pointer rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-400 focus:outline-none file:mr-4 file:rounded-md file:border-0 file:bg-sky-500 file:px-4 file:py-1 file:text-xs file:font-semibold file:text-slate-950 hover:file:bg-sky-400" />
+                    </label>
+                    <label className="block">
+                      <span className="text-xs font-semibold text-slate-300">Caption (Optional)</span>
+                      <input type="text" value={newHeroForm.caption} onChange={e => setNewHeroForm({...newHeroForm, caption: e.target.value})} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white focus:border-sky-500 focus:outline-none" placeholder="e.g. Modern Classrooms" />
+                    </label>
+                  </div>
+                  <div className="flex justify-end pt-2">
+                    <button type="submit" disabled={isPending || !newHeroForm.url} className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400 disabled:opacity-50">Upload Image</button>
+                  </div>
+                </form>
+              )}
+
+              <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950">
+                <table className="w-full text-left text-sm text-slate-300">
+                  <thead className="border-b border-slate-800 bg-slate-900 text-slate-400">
+                    <tr>
+                      <th className="px-4 py-3 font-medium">Preview</th>
+                      <th className="px-4 py-3 font-medium">Caption</th>
+                      <th className="px-4 py-3 font-medium">Status</th>
+                      <th className="px-4 py-3 text-right font-medium">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800">
+                    {heroImages.map((img) => (
+                      <tr key={img.id} className={`transition hover:bg-slate-900/50 ${!img.isActive ? 'opacity-50' : ''}`}>
+                        <td className="px-4 py-3"><img src={getDriveDirectLink(img.url)} alt={img.caption} className="h-16 w-24 object-cover rounded-lg border border-slate-700 bg-slate-900" /></td>
+                        <td className="px-4 py-3 font-medium text-white">{img.caption || <span className="text-slate-500 italic">No caption</span>}</td>
+                        <td className="px-4 py-3"><span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${img.isActive ? 'bg-emerald-900/50 text-emerald-400' : 'bg-slate-800 text-slate-400'}`}>{img.isActive ? 'Active' : 'Hidden'}</span></td>
+                        <td className="px-4 py-3 text-right space-x-3 whitespace-nowrap">
+                          <button onClick={() => handleToggleHero(img.id, img.isActive)} disabled={isPending} className="text-xs font-medium text-sky-400 hover:text-sky-300 disabled:opacity-50">{img.isActive ? 'Hide' : 'Show'}</button>
+                          <button onClick={() => handleDeleteHero(img.id)} disabled={isPending} className="text-xs font-medium text-red-400 hover:text-red-300 disabled:opacity-50">Delete</button>
+                        </td>
+                      </tr>
+                    ))}
+                    {heroImages.length === 0 && (<tr><td colSpan={4} className="py-6 text-center text-slate-500">No hero images uploaded.</td></tr>)}
                   </tbody>
                 </table>
               </div>
