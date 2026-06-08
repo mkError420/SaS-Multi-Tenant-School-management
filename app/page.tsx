@@ -97,7 +97,7 @@ export default async function HomePage() {
         <div className="space-y-8">
           <div>
             <p className="text-sm uppercase tracking-[0.3em] text-sky-400">Subscription plans</p>
-            <h2 className="mt-3 text-3xl font-semibold text-white">Simple Taka pricing for every school stage</h2>
+            <h2 className="mt-3 text-3xl font-semibold text-yellow-600">Simple Taka pricing for every school stage</h2>
             <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-400">
               Select the plan that fits your school best, from essential management to advanced reporting and support.
             </p>
@@ -162,7 +162,7 @@ export default async function HomePage() {
         <div className="flex flex-wrap items-center justify-between gap-6">
           <div>
             <p className="text-sm uppercase tracking-[0.3em] text-sky-400">Running Trusted Schools</p>
-            <h2 className="mt-3 text-3xl font-semibold text-white">They Are Our Trusted Partner Schools</h2>
+            <h2 className="mt-3 text-3xl font-semibold text-yellow-600">Our Trusted Partner Schools</h2>
           </div>
           <p className="max-w-2xl text-sm leading-6 text-slate-400">
             These schools have chosen our platform to power their operations and provide a seamless experience for their communities.
@@ -191,7 +191,7 @@ export default async function HomePage() {
       <section className="mt-16 grid gap-10 lg:grid-cols-2 items-stretch">
         <div className="rounded-[2rem] border border-slate-800 bg-gradient-to-br from-slate-900 to-slate-950 p-8 shadow-soft flex flex-col justify-center">
           <p className="text-sm uppercase tracking-[0.3em] text-sky-400">Get in Touch</p>
-          <h2 className="mt-3 text-3xl font-semibold text-white">We&apos;d love to hear from you</h2>
+          <h2 className="mt-3 text-3xl font-semibold text-purple-600">We&apos;d love to hear from you</h2>
           <p className="mt-4 text-sm leading-6 text-slate-400">
             Whether you have a question about features, pricing, need a demo, or anything else, our team is ready to answer all your questions.
           </p>
