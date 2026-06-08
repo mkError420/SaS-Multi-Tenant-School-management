@@ -13,10 +13,11 @@ import {
   updateInvoiceStatusAction,
   removeInvoiceAction,
   editTenantDetailsAction,
-  resetCredentialsAction
+  resetCredentialsAction,
+  updateSettingsAction
 } from './actions';
 import type { Tenant } from '../../lib/tenant';
-import type { PlatformAnalytics, PlanPackage, BillingRecord } from '../../lib/school';
+import type { PlatformAnalytics, PlanPackage, BillingRecord, PlatformSettings } from '../../lib/school';
 import Link from 'next/link';
 
 export default function DashboardClient({
@@ -24,12 +25,15 @@ export default function DashboardClient({
   analytics,
   plans,
   billingRecords = [],
+  initialSettings,
 }: {
   tenants: Tenant[];
   analytics: PlatformAnalytics;
   plans: PlanPackage[];
   billingRecords?: BillingRecord[];
+  initialSettings: PlatformSettings;
 }) {
+  const [activeTab, setActiveTab] = useState<'overview' | 'tenants' | 'plans' | 'settings'>('overview');
   const [isPending, startTransition] = useTransition();
   const [editingPlan, setEditingPlan] = useState<string | null>(null);
   const [planForm, setPlanForm] = useState({ name: '', price: 0, studentLimit: 0, durationDays: 30, serverCost: 0 });
@@ -50,6 +54,9 @@ export default function DashboardClient({
 
   const [revenueMonth, setRevenueMonth] = useState((new Date().getMonth() + 1).toString().padStart(2, '0'));
   const [revenueYear, setRevenueYear] = useState(new Date().getFullYear().toString());
+
+  const [settingsForm, setSettingsForm] = useState(initialSettings);
+  const [settingsMessage, setSettingsMessage] = useState<{ text: string, type: 'error' | 'success' } | null>(null);
 
   const handleStatusChange = (slug: string, status: 'active' | 'pending' | 'suspended') => {
     startTransition(() => {
@@ -257,13 +264,24 @@ export default function DashboardClient({
     }
   };
 
+  const handleSaveSettings = (e: React.FormEvent) => {
+    e.preventDefault();
+    startTransition(() => {
+      updateSettingsAction(settingsForm).then(() => {
+        setSettingsMessage({ text: 'Settings updated successfully!', type: 'success' });
+        setTimeout(() => setSettingsMessage(null), 3000);
+      });
+    });
+  };
+
   const filteredTenants = tenants.filter((tenant) =>
     tenant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     tenant.slug.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const demoTenants = filteredTenants.filter(t => t.category === 'demo' || !t.category);
-  const trustedTenants = filteredTenants.filter(t => t.category === 'trusted');
+  const pendingTenants = filteredTenants.filter(t => t.status === 'pending');
+  const demoTenants = filteredTenants.filter(t => (t.category === 'demo' || !t.category) && t.status !== 'pending');
+  const trustedTenants = filteredTenants.filter(t => t.category === 'trusted' && t.status !== 'pending');
 
   const expiredTenants = tenants.filter(
     (t) => t.status === 'active' && t.subscriptionExpiresAt && new Date(t.subscriptionExpiresAt) < new Date()
@@ -418,7 +436,20 @@ export default function DashboardClient({
   };
 
   return (
-    <div className="space-y-12">
+    <div className="flex flex-col gap-8 lg:flex-row">
+      {/* Sidebar Navigation */}
+      <aside className="w-full shrink-0 lg:w-64">
+        <nav className="flex flex-col gap-2 rounded-3xl border border-slate-800 bg-slate-900/50 p-4 sticky top-6">
+          <button onClick={() => setActiveTab('overview')} className={`text-left px-4 py-3 rounded-2xl text-sm font-semibold transition ${activeTab === 'overview' ? 'bg-sky-500 text-slate-950' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>Overview</button>
+          <button onClick={() => setActiveTab('tenants')} className={`text-left px-4 py-3 rounded-2xl text-sm font-semibold transition ${activeTab === 'tenants' ? 'bg-sky-500 text-slate-950' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>Tenant Management</button>
+          <button onClick={() => setActiveTab('plans')} className={`text-left px-4 py-3 rounded-2xl text-sm font-semibold transition ${activeTab === 'plans' ? 'bg-sky-500 text-slate-950' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>Subscription Plans</button>
+          <button onClick={() => setActiveTab('settings')} className={`text-left px-4 py-3 rounded-2xl text-sm font-semibold transition ${activeTab === 'settings' ? 'bg-sky-500 text-slate-950' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>Platform Settings</button>
+        </nav>
+      </aside>
+
+      <div className="flex-1 space-y-12 min-w-0">
+        {activeTab === 'overview' && (
+          <div className="space-y-12 animate-in fade-in duration-300">
       {/* Analytics Overview */}
       <section className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-3xl border border-slate-800 bg-slate-900/50 p-6 flex flex-col justify-between col-span-full sm:col-span-2 lg:col-span-1">
@@ -473,7 +504,11 @@ export default function DashboardClient({
           </ul>
         </section>
       )}
+          </div>
+        )}
 
+        {activeTab === 'tenants' && (
+          <div className="space-y-12 animate-in fade-in duration-300">
       {/* Tenants Table */}
       <section className="rounded-3xl border border-slate-800 bg-slate-900/50 p-6">
         <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
@@ -494,6 +529,7 @@ export default function DashboardClient({
         </div>
         
         {[
+          { title: 'Pending Orders', data: pendingTenants },
           { title: 'Trusted Organizations', data: trustedTenants },
           { title: 'Demo Schools', data: demoTenants }
         ].map((section) => (
@@ -573,7 +609,11 @@ export default function DashboardClient({
           </div>
         ))}
       </section>
+          </div>
+        )}
 
+        {activeTab === 'plans' && (
+          <div className="space-y-12 animate-in fade-in duration-300">
       {/* Plans Management */}
       <section className="rounded-3xl border border-slate-800 bg-slate-900/50 p-6">
         <div className="mb-6 flex items-center justify-between">
@@ -664,6 +704,55 @@ export default function DashboardClient({
           </table>
         </div>
       </section>
+          </div>
+        )}
+
+        {activeTab === 'settings' && (
+          <div className="space-y-12 animate-in fade-in duration-300">
+            <section className="rounded-3xl border border-slate-800 bg-slate-900/50 p-6">
+              <h2 className="mb-6 text-xl font-semibold text-white">Platform Settings</h2>
+              
+              {settingsMessage && (
+                <div className={`mb-6 p-4 rounded-xl text-sm font-semibold ${settingsMessage.type === 'success' ? 'bg-emerald-900/50 text-emerald-400' : 'bg-red-900/50 text-red-400'}`}>
+                  {settingsMessage.text}
+                </div>
+              )}
+
+              <form onSubmit={handleSaveSettings} className="space-y-6">
+                <div className="grid gap-6 sm:grid-cols-2">
+                  <label className="block">
+                    <span className="text-sm font-semibold text-slate-200">Platform Name</span>
+                    <input type="text" required value={settingsForm.platformName} onChange={e => setSettingsForm({...settingsForm, platformName: e.target.value})} className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white focus:border-sky-500 focus:outline-none" />
+                  </label>
+                  <label className="block">
+                    <span className="text-sm font-semibold text-slate-200">Support Email</span>
+                    <input type="email" required value={settingsForm.supportEmail} onChange={e => setSettingsForm({...settingsForm, supportEmail: e.target.value})} className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white focus:border-sky-500 focus:outline-none" />
+                  </label>
+                  <label className="block sm:col-span-2 lg:col-span-1">
+                    <span className="text-sm font-semibold text-slate-200">Support Phone</span>
+                    <input type="text" required value={settingsForm.supportPhone} onChange={e => setSettingsForm({...settingsForm, supportPhone: e.target.value})} className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white focus:border-sky-500 focus:outline-none" />
+                  </label>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <label className="relative inline-flex cursor-pointer items-center">
+                    <input type="checkbox" checked={settingsForm.maintenanceMode} onChange={e => setSettingsForm({...settingsForm, maintenanceMode: e.target.checked})} className="peer sr-only" />
+                    <div className="peer h-6 w-11 rounded-full bg-slate-700 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-sky-500 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none"></div>
+                  </label>
+                  <span className="text-sm font-semibold text-slate-200">Maintenance Mode</span>
+                  <p className="text-xs text-slate-500 ml-2">(If enabled, blocks access to all tenant portals)</p>
+                </div>
+
+                <div className="border-t border-slate-800 pt-6">
+                  <button type="submit" disabled={isPending} className="rounded-2xl bg-sky-500 px-6 py-3 text-sm font-semibold text-slate-950 hover:bg-sky-400 disabled:opacity-50">
+                    {isPending ? 'Saving...' : 'Save Settings'}
+                  </button>
+                </div>
+              </form>
+            </section>
+          </div>
+        )}
+      </div>
 
       {/* Invoice Modal */}
       {invoiceModalTenant && (

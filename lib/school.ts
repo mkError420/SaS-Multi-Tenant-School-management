@@ -110,6 +110,20 @@ export type ParentPortalData = {
   teacherContact: string;
 };
 
+export type PlatformSettings = {
+  platformName: string;
+  supportEmail: string;
+  supportPhone: string;
+  maintenanceMode: boolean;
+};
+
+const defaultPlatformSettings: PlatformSettings = {
+  platformName: 'Zass SaaS',
+  supportEmail: 'support@zass.com',
+  supportPhone: '+8801572491828',
+  maintenanceMode: false,
+};
+
 const defaultStudents: Student[] = [
   { id: 'student-1', name: 'Amelia Rivera', grade: '5', status: 'Active', enrolled: '2024-08-14' },
   { id: 'student-2', name: 'Noah Patel', grade: '7', status: 'Active', enrolled: '2023-09-01' },
@@ -243,6 +257,32 @@ export async function createTenantStudent(tenantSlug: string, name: string, grad
     });
     return true;
   } catch (error) {
+    return false;
+  }
+}
+
+export async function getPlatformSettings() {
+  if (!process.env.MONGODB_URI) {
+    return defaultPlatformSettings;
+  }
+  try {
+    const db = await getDatabase();
+    const settings = await db.collection<PlatformSettings>('settings').findOne({ type: 'platform' });
+    return settings ? { platformName: settings.platformName, supportEmail: settings.supportEmail, supportPhone: settings.supportPhone, maintenanceMode: settings.maintenanceMode } : defaultPlatformSettings;
+  } catch (error) {
+    console.error('Failed to load settings:', error);
+    return defaultPlatformSettings;
+  }
+}
+
+export async function updatePlatformSettings(settings: Partial<PlatformSettings>) {
+  if (!process.env.MONGODB_URI) return false;
+  try {
+    const db = await getDatabase();
+    await db.collection('settings').updateOne({ type: 'platform' }, { $set: settings }, { upsert: true });
+    return true;
+  } catch (error) {
+    console.error('Failed to update settings:', error);
     return false;
   }
 }

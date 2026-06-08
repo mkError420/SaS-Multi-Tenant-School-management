@@ -1,7 +1,7 @@
 'use server';
 
 import { updateTenantStatus, deleteTenant, renewTenantSubscription, updateTenantDetails } from '../../lib/tenant';
-import { updatePlan, createPlan, deletePlan, getTenantBilling, createTenantInvoice, updateTenantInvoice, deleteTenantInvoice } from '../../lib/school';
+import { updatePlan, createPlan, deletePlan, getTenantBilling, createTenantInvoice, updateTenantInvoice, deleteTenantInvoice, updatePlatformSettings } from '../../lib/school';
 import { resetTenantAdminCredentials } from '../../lib/auth';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
@@ -73,4 +73,10 @@ export async function logoutAction() {
 export async function resetCredentialsAction(slug: string, email: string, password: string) {
   await resetTenantAdminCredentials(slug, email, password);
   revalidatePath('/super-admin');
+}
+
+export async function updateSettingsAction(payload: { platformName: string; supportEmail: string; supportPhone: string; maintenanceMode: boolean }) {
+  await updatePlatformSettings(payload);
+  revalidatePath('/super-admin');
+  revalidatePath('/');
 }
