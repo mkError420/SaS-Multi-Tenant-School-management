@@ -201,8 +201,8 @@ export default function DashboardClient({
               <p style="margin-top: 5px; color: #64748b; font-size: 14px;">#INV-${inv.id.substring(0, 8).toUpperCase()}</p>
             </div>
             <div style="text-align: right; font-size: 14px; line-height: 1.5;">
-              <strong>Zass SaaS Platform</strong><br>
-              support@zass.com<br>
+              <strong>${initialSettings.platformName} Platform</strong><br>
+              ${initialSettings.supportEmail}<br>
               Super Admin Dashboard
             </div>
           </div>
@@ -501,7 +501,6 @@ export default function DashboardClient({
           </div>
 
           <button onClick={() => setActiveTab('plans')} className={`text-left px-4 py-3 rounded-2xl text-sm font-semibold transition ${activeTab === 'plans' ? 'bg-sky-500 text-slate-950' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>Subscription Plans</button>
-          <button onClick={() => setActiveTab('settings')} className={`text-left px-4 py-3 rounded-2xl text-sm font-semibold transition ${activeTab === 'settings' ? 'bg-sky-500 text-slate-950' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>Platform Settings</button>
           <button onClick={() => setActiveTab('contact')} className={`flex items-center justify-between text-left px-4 py-3 rounded-2xl text-sm font-semibold transition ${activeTab === 'contact' ? 'bg-sky-500 text-slate-950' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
             <span>Contact Messages</span>
             {unreadContactCount > 0 && (
@@ -510,6 +509,7 @@ export default function DashboardClient({
               </span>
             )}
           </button>
+           <button onClick={() => setActiveTab('settings')} className={`text-left px-4 py-3 rounded-2xl text-sm font-semibold transition ${activeTab === 'settings' ? 'bg-sky-500 text-slate-950' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>Platform Settings</button>
         </nav>
       </aside>
 

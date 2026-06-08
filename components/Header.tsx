@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 
-export default function Header() {
+export default function Header({ platformName = 'Zass-school-management' }: { platformName?: string }) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -11,7 +11,7 @@ export default function Header() {
       <div className="mx-auto flex max-w-7xl flex-col gap-3 px-6 py-4 sm:px-8">
         <div className="flex items-center justify-between gap-4">
           <Link href="/" className="text-xl font-semibold text-white hover:text-sky-300">
-            Zass-school-management
+            {platformName}
           </Link>
 
           <button
