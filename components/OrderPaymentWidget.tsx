@@ -40,7 +40,11 @@ export default function OrderPaymentWidget({ supportPhone, supportEmail }: { sup
             ))}
           </div>
         ) : (
-          <p className="mt-4 text-sm text-slate-500">No payment methods configured. Please contact support.</p>
+          <p className="mt-4 text-xl text-slate-500">
+            <h2 className='text-pink-600 font-bold'>B-kash: <span className='text-white font-semibold'>0185-4718767</span> <span className='text-gray-500 text-sm'>(Send Money)</span></h2>
+            <h2 className='text-red-700 font-bold'>Nagad: <span className='text-white font-semibold'>0185-4718767</span> <span className='text-gray-500 text-sm'>(Send Money)</span></h2> 
+            <h2 className='text-purple-700 font-bold'>Rocket: <span className='text-white font-semibold'>0157-2491828</span> <span className='text-gray-500 text-sm'>(Send Money)</span></h2>
+          </p>
         )}
       </div>
 
