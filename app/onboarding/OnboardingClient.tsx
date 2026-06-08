@@ -21,6 +21,7 @@ export default function OnboardingClient({ plans }: { plans: PlanPackage[] }) {
     phone: '',
     authorityName: '',
     email: '',
+    password: '',
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -38,13 +39,13 @@ export default function OnboardingClient({ plans }: { plans: PlanPackage[] }) {
       slug = form.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
     }
 
-    const submitPayload = { ...form, slug, category: 'trusted' as const, adminEmail: form.email, adminPassword: Math.random().toString(36).slice(-10) };
+    const submitPayload = { ...form, slug, category: 'trusted' as const, adminEmail: form.email, adminPassword: form.password };
 
     startTransition(async () => {
       const result = await submitOrderAction(submitPayload);
       if (result.success) {
         setMessage({ text: 'Order submitted successfully! Our team will review and activate your portal soon.', type: 'success' });
-        setForm({ name: '', slug: '', city: '', description: '', plan: plans[0]?.id || '', phone: '', authorityName: '', email: '' });
+        setForm({ name: '', slug: '', city: '', description: '', plan: plans[0]?.id || '', phone: '', authorityName: '', email: '', password: '' });
       } else {
         setMessage({ text: result.error || 'Failed to submit order.', type: 'error' });
       }
@@ -76,14 +77,18 @@ export default function OnboardingClient({ plans }: { plans: PlanPackage[] }) {
             <input required name="phone" type="text" value={form.phone} onChange={handleChange} className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white focus:border-sky-500 focus:outline-none" />
           </label>
           <label className="block">
-            <span className="text-sm font-semibold text-slate-200">School Contact Email *</span>
+            <span className="text-sm font-semibold text-slate-200">Admin Email *</span>
             <input required name="email" type="email" value={form.email} onChange={handleChange} className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white focus:border-sky-500 focus:outline-none" />
+          </label>
+          <label className="block">
+            <span className="text-sm font-semibold text-slate-200">Admin Password *</span>
+            <input required name="password" type="password" value={form.password} onChange={handleChange} className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white focus:border-sky-500 focus:outline-none" />
           </label>
           <label className="block">
             <span className="text-sm font-semibold text-slate-200">City *</span>
             <input required name="city" type="text" value={form.city} onChange={handleChange} className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white focus:border-sky-500 focus:outline-none" />
           </label>
-          <label className="block sm:col-span-2">
+          <label className="block">
             <span className="text-sm font-semibold text-slate-200">Subscription Plan *</span>
             <select required name="plan" value={form.plan} onChange={handleChange} className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white focus:border-sky-500 focus:outline-none">
               {plans.map(p => <option key={p.id} value={p.id}>{p.name} - ৳{p.price}/mo</option>)}
