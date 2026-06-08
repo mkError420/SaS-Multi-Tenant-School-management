@@ -38,7 +38,7 @@ export default function OnboardingClient({ plans }: { plans: PlanPackage[] }) {
       slug = form.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
     }
 
-    const submitPayload = { ...form, slug, category: 'demo' as const, adminEmail: form.email, adminPassword: Math.random().toString(36).slice(-10) };
+    const submitPayload = { ...form, slug, category: 'trusted' as const, adminEmail: form.email, adminPassword: Math.random().toString(36).slice(-10) };
 
     startTransition(async () => {
       const result = await submitOrderAction(submitPayload);
