@@ -98,6 +98,14 @@ export async function getAllTenants() {
           $or: [{ tenantSlug: tenant.slug }, { tenantId: tenant.slug }, { slug: tenant.slug }]
         });
 
+        const teacherCount = await db.collection('teachers').countDocuments({
+          $or: [{ tenantSlug: tenant.slug }, { tenantId: tenant.slug }, { slug: tenant.slug }]
+        });
+
+        const classCount = await db.collection('classes').countDocuments({
+          $or: [{ tenantSlug: tenant.slug }, { tenantId: tenant.slug }, { slug: tenant.slug }]
+        });
+
         return {
           id: tenant._id.toString(),
           name: tenant.name,
@@ -106,9 +114,9 @@ export async function getAllTenants() {
           description: tenant.description,
           plan: tenant.plan,
           status: tenant.status ?? 'active',
-          students: studentCount, // Dynamically synced with School Administration Portal
-          teachers: tenant.teachers ?? 0,
-          classes: tenant.classes ?? 0,
+          students: studentCount,
+          teachers: teacherCount,
+          classes: classCount,
           revenue: tenant.revenue ?? 0,
           activationDate: tenant.activationDate,
           subscriptionExpiresAt: tenant.subscriptionExpiresAt,
@@ -156,6 +164,14 @@ export async function getTenantBySlug(slug: string) {
       $or: [{ tenantSlug: tenant.slug }, { tenantId: tenant.slug }, { slug: tenant.slug }]
     });
 
+    const teacherCount = await db.collection('teachers').countDocuments({
+      $or: [{ tenantSlug: tenant.slug }, { tenantId: tenant.slug }, { slug: tenant.slug }]
+    });
+
+    const classCount = await db.collection('classes').countDocuments({
+      $or: [{ tenantSlug: tenant.slug }, { tenantId: tenant.slug }, { slug: tenant.slug }]
+    });
+
     return {
       id: tenant._id.toString(),
       name: tenant.name,
@@ -164,9 +180,9 @@ export async function getTenantBySlug(slug: string) {
       description: tenant.description,
       plan: tenant.plan,
       status: tenant.status ?? 'active',
-      students: studentCount, // Dynamically synced with School Administration Portal
-      teachers: tenant.teachers ?? 0,
-      classes: tenant.classes ?? 0,
+      students: studentCount,
+      teachers: teacherCount,
+      classes: classCount,
       revenue: tenant.revenue ?? 0,
       activationDate: tenant.activationDate,
       subscriptionExpiresAt: tenant.subscriptionExpiresAt,
@@ -252,6 +268,7 @@ export async function deleteTenant(slug: string) {
       db.collection('teacherPortal').deleteMany(tenantScope),
       db.collection('studentPortal').deleteMany(tenantScope),
       db.collection('parentPortal').deleteMany(tenantScope),
+      db.collection('attendance').deleteMany(tenantScope),
     ]);
 
     return result.deletedCount > 0;

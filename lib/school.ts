@@ -32,6 +32,14 @@ export type ClassSchedule = {
   teacher: string;
 };
 
+export type AttendanceRecord = {
+  id: string;
+  studentId: string;
+  studentName: string;
+  date: string;
+  status: string;
+};
+
 export type BillingRecord = {
   id: string;
   label: string;
@@ -456,6 +464,51 @@ export async function getTenantTeachers(tenantSlug: string) {
   }
 }
 
+export async function createTenantTeacher(tenantSlug: string, name: string, subject: string, email: string, status: string) {
+  if (!process.env.MONGODB_URI) return false;
+  try {
+    const db = await getDatabase();
+    await db.collection('teachers').insertOne({
+      tenantSlug,
+      name,
+      subject,
+      email,
+      status,
+    });
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+export async function updateTenantTeacher(tenantSlug: string, id: string, name: string, subject: string, email: string, status: string) {
+  if (!process.env.MONGODB_URI) return false;
+  try {
+    const db = await getDatabase();
+    let query: any = { id, tenantSlug };
+    if (ObjectId.isValid(id)) query = { $or: [{ id, tenantSlug }, { _id: new ObjectId(id), tenantSlug }] };
+    
+    const result = await db.collection('teachers').updateOne(query, { $set: { name, subject, email, status } });
+    return result.modifiedCount > 0;
+  } catch (error) {
+    return false;
+  }
+}
+
+export async function deleteTenantTeacher(tenantSlug: string, id: string) {
+  if (!process.env.MONGODB_URI) return false;
+  try {
+    const db = await getDatabase();
+    let query: any = { id, tenantSlug };
+    if (ObjectId.isValid(id)) query = { $or: [{ id, tenantSlug }, { _id: new ObjectId(id), tenantSlug }] };
+
+    const result = await db.collection('teachers').deleteOne(query);
+    return result.deletedCount > 0;
+  } catch (error) {
+    return false;
+  }
+}
+
 export async function getTenantSchedule(tenantSlug: string) {
   if (!process.env.MONGODB_URI) {
     return defaultSchedule;
@@ -476,6 +529,101 @@ export async function getTenantSchedule(tenantSlug: string) {
     console.error('Failed to load tenant schedule:', error);
     return [];
   }
+}
+
+export async function createTenantClass(tenantSlug: string, title: string, day: string, time: string, room: string, teacher: string) {
+  if (!process.env.MONGODB_URI) return false;
+  try {
+    const db = await getDatabase();
+    await db.collection('classes').insertOne({
+      tenantSlug,
+      title,
+      day,
+      time,
+      room,
+      teacher,
+    });
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+export async function updateTenantClass(tenantSlug: string, id: string, title: string, day: string, time: string, room: string, teacher: string) {
+  if (!process.env.MONGODB_URI) return false;
+  try {
+    const db = await getDatabase();
+    let query: any = { id, tenantSlug };
+    if (ObjectId.isValid(id)) query = { $or: [{ id, tenantSlug }, { _id: new ObjectId(id), tenantSlug }] };
+    
+    const result = await db.collection('classes').updateOne(query, { $set: { title, day, time, room, teacher } });
+    return result.modifiedCount > 0;
+  } catch (error) {
+    return false;
+  }
+}
+
+export async function deleteTenantClass(tenantSlug: string, id: string) {
+  if (!process.env.MONGODB_URI) return false;
+  try {
+    const db = await getDatabase();
+    let query: any = { id, tenantSlug };
+    if (ObjectId.isValid(id)) query = { $or: [{ id, tenantSlug }, { _id: new ObjectId(id), tenantSlug }] };
+
+    const result = await db.collection('classes').deleteOne(query);
+    return result.deletedCount > 0;
+  } catch (error) {
+    return false;
+  }
+}
+
+export async function getTenantAttendance(tenantSlug: string) {
+  if (!process.env.MONGODB_URI) return [];
+  try {
+    const db = await getDatabase();
+    const records = await db.collection('attendance').find(tenantScopeQuery(tenantSlug)).sort({ date: -1 }).toArray();
+    return records.map((r: any) => ({
+      id: r._id.toString(),
+      studentId: r.studentId,
+      studentName: r.studentName,
+      date: r.date,
+      status: r.status,
+    })) as AttendanceRecord[];
+  } catch (error) {
+    console.error('Failed to load attendance:', error);
+    return [];
+  }
+}
+
+export async function createTenantAttendance(tenantSlug: string, studentId: string, studentName: string, date: string, status: string) {
+  if (!process.env.MONGODB_URI) return false;
+  try {
+    const db = await getDatabase();
+    await db.collection('attendance').insertOne({ tenantSlug, studentId, studentName, date, status });
+    return true;
+  } catch (error) { return false; }
+}
+
+export async function updateTenantAttendance(tenantSlug: string, id: string, studentId: string, studentName: string, date: string, status: string) {
+  if (!process.env.MONGODB_URI) return false;
+  try {
+    const db = await getDatabase();
+    let query: any = { id, tenantSlug };
+    if (ObjectId.isValid(id)) query = { $or: [{ id, tenantSlug }, { _id: new ObjectId(id), tenantSlug }] };
+    const result = await db.collection('attendance').updateOne(query, { $set: { studentId, studentName, date, status } });
+    return result.modifiedCount > 0;
+  } catch (error) { return false; }
+}
+
+export async function deleteTenantAttendance(tenantSlug: string, id: string) {
+  if (!process.env.MONGODB_URI) return false;
+  try {
+    const db = await getDatabase();
+    let query: any = { id, tenantSlug };
+    if (ObjectId.isValid(id)) query = { $or: [{ id, tenantSlug }, { _id: new ObjectId(id), tenantSlug }] };
+    const result = await db.collection('attendance').deleteOne(query);
+    return result.deletedCount > 0;
+  } catch (error) { return false; }
 }
 
 export async function getTenantBilling(tenantSlug: string) {

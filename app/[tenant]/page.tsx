@@ -1,5 +1,5 @@
 import { getTenantBySlug } from '../../lib/tenant';
-import { getTenantStudents, getTenantTeachers, getTenantSchedule, getTenantNoticeBoard, getTenantBilling } from '../../lib/school';
+import { getTenantStudents, getTenantTeachers, getTenantSchedule, getTenantNoticeBoard, getTenantBilling} from '../../lib/school';
 import { notFound } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';

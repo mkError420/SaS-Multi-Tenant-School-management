@@ -75,6 +75,12 @@ export default async function TenantLayout({
             <Link href={`/${tenant.slug}/teachers`} className="whitespace-nowrap rounded-2xl bg-slate-900/80 px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white">
               Teacher Staff
             </Link>
+            <Link href={`/${tenant.slug}/classes`} className="whitespace-nowrap rounded-2xl bg-slate-900/80 px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white">
+              Classes
+            </Link>
+            <Link href={`/${tenant.slug}/attendance`} className="whitespace-nowrap rounded-2xl bg-slate-900/80 px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white">
+              Attendance
+            </Link>
           </nav>
         </aside>
 

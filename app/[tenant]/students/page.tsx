@@ -1,23 +1,22 @@
-import { notFound } from 'next/navigation';
 import { getTenantBySlug } from '../../../lib/tenant';
 import { getTenantStudents } from '../../../lib/school';
-import StudentsClient from './StudentsClient';
+import StudentsManager from '../../../components/StudentsManager';
+import { redirect } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 
-type Props = {
-  params: {
-    tenant: string;
-  };
-};
-
-export default async function StudentsPage({ params }: Props) {
+export default async function StudentsPage({ params }: { params: { tenant: string } }) {
   const tenant = await getTenantBySlug(params.tenant);
+  
   if (!tenant) {
-    notFound();
+    redirect('/');
   }
 
-  const students = await getTenantStudents(params.tenant);
+  const students = await getTenantStudents(tenant.slug);
 
-  return <StudentsClient students={students} tenant={tenant} />;
+  return (
+    <div className="animate-in fade-in duration-300">
+      <StudentsManager tenantSlug={tenant.slug} initialStudents={students} />
+    </div>
+  );
 }
