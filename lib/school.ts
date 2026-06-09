@@ -1,1028 +1,453 @@
-import { getDatabase } from './mongodb';
 import { ObjectId } from 'mongodb';
-import { getAllTenants } from './tenant';
-import { Tenant } from './tenant';
-import { signUpUser } from './auth';
+import { getDatabase } from './mongodb';
 
 export type Student = {
+  _id?: ObjectId;
   id: string;
   name: string;
   grade: string;
-  status: string;
-  enrolled: string;
+  status: 'Active' | 'Inactive' | 'On leave' | 'Graduated';
+  enrolled: string; // date string
   guardianName?: string;
   guardianPhone?: string;
   address?: string;
+  tenantSlug: string;
 };
 
 export type Teacher = {
-  id: string;
+  _id?: ObjectId;
+  id:string;
   name: string;
   subject: string;
   email: string;
-  status: string;
+  status: 'Available' | 'In class' | 'On leave';
+  tenantSlug: string;
 };
 
-export type ClassSchedule = {
+export type ScheduleItem = {
+  _id?: ObjectId;
   id: string;
-  title: string;
   day: string;
+  title: string; // Class/Subject
   time: string;
-  room: string;
   teacher: string;
+  room:string;
+  tenantSlug: string;
 };
 
-export type AttendanceRecord = {
-  id: string;
-  studentId: string;
-  studentName: string;
-  date: string;
-  status: string;
-};
-
-export type BillingRecord = {
-  id: string;
-  label: string;
-  amount: number;
-  due: string;
-  status: 'paid' | 'unpaid' | 'pending';
-  tenantSlug?: string;
+export type PlatformAnalytics = {
+    activeSchools: number;
+    totalStudents: number;
+    pendingSchools: number;
+    totalRevenue: number;
 };
 
 export type PlanPackage = {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  studentLimit: number;
-  durationDays: number;
-  serverCost?: number;
+    id: string;
+    name: string;
+    description: string;
+    price: number;
+    studentLimit: number;
+    durationDays: number;
+    serverCost: number;
 };
 
-export type AcademicSetup = {
-  classes: number;
-  sections: number;
-  subjects: number;
-  shifts: string[];
-  session: string;
-};
-
-export type EnrollmentApplication = {
-  id: string;
-  studentName: string;
-  grade: string;
-  status: 'pending' | 'approved' | 'rejected';
-  appliedOn: string;
-};
-
-export type Notice = {
-  id: string;
-  title: string;
-  date: string;
-  audience: string;
-  message: string;
-};
-
-export type TeacherPortalData = {
-  attendanceRate: string;
-  classesToday: string;
-  pendingHomework: number;
-  gradebookEntries: {
-    course: string;
-    dueDate: string;
-    status: string;
-  }[];
-};
-
-export type StudentPortalData = {
-  studentId: string;
-  className: string;
-  section: string;
-  attendancePct: number;
-  results: {
-    subject: string;
-    score: string;
-    grade: string;
-  }[];
-  feeStatus: {
-    paid: number;
-    due: number;
-  };
-};
-
-export type ParentPortalData = {
-  childName: string;
-  className: string;
-  attendancePct: number;
-  outstandingFees: number;
-  teacherContact: string;
-};
-
-export type ContactMessage = {
-  id: string;
-  name: string;
-  email: string;
-  subject: string;
-  message: string;
-  date: string;
-  status: 'unread' | 'read';
+export type BillingRecord = {
+    id: string;
+    tenantSlug: string;
+    label: string;
+    amount: number;
+    due: string;
+    status: 'paid' | 'unpaid' | 'pending';
 };
 
 export type PlatformSettings = {
-  platformName: string;
-  supportEmail: string;
-  supportPhone: string;
-  maintenanceMode: boolean;
+    platformName: string;
+    supportEmail: string;
+    supportPhone: string;
+    maintenanceMode: boolean;
+};
+
+export type ContactMessage = {
+    id: string;
+    name: string;
+    email: string;
+    subject: string;
+    message: string;
+    date: string;
+    status: 'read' | 'unread';
 };
 
 export type HeroImage = {
+    id: string;
+    url: string;
+    caption: string;
+    isActive: boolean;
+};
+
+export type AcademicClass = {
+  _id?: ObjectId;
   id: string;
-  url: string;
-  caption: string;
-  isActive: boolean;
-  dateAdded: string;
+  name: string;
+  section: string;
+  room: string;
+  tenantSlug: string;
 };
 
-const defaultPlatformSettings: PlatformSettings = {
-  platformName: 'Zass SaaS',
-  supportEmail: 'support@zass.com',
-  supportPhone: '+8801572491828',
-  maintenanceMode: false,
+export type AcademicSubject = {
+  _id?: ObjectId;
+  id: string;
+  name: string;
+  code: string;
+  tenantSlug: string;
 };
 
-const defaultStudents: Student[] = [
-  { id: 'student-1', name: 'Amelia Rivera', grade: '5', status: 'Active', enrolled: '2024-08-14' },
-  { id: 'student-2', name: 'Noah Patel', grade: '7', status: 'Active', enrolled: '2023-09-01' },
-  { id: 'student-3', name: 'Mia Hernandez', grade: '3', status: 'Active', enrolled: '2024-01-12' },
-  { id: 'student-4', name: 'Ethan Walker', grade: '12', status: 'On leave', enrolled: '2021-08-24' },
-];
-
-const defaultTeachers: Teacher[] = [
-  { id: 'teacher-1', name: 'Avery Brooks', subject: 'Mathematics', email: 'avery@schoolspace.com', status: 'Available' },
-  { id: 'teacher-2', name: 'Jaxon Lee', subject: 'Science', email: 'jaxon@schoolspace.com', status: 'In class' },
-  { id: 'teacher-3', name: 'Sofia Kim', subject: 'English', email: 'sofia@schoolspace.com', status: 'Available' },
-  { id: 'teacher-4', name: 'Lucas Morgan', subject: 'History', email: 'lucas@schoolspace.com', status: 'On leave' },
-];
-
-const defaultSchedule: ClassSchedule[] = [
-  { id: 'schedule-1', title: 'Algebra II', day: 'Monday', time: '09:00 AM', room: 'Room 201', teacher: 'Avery Brooks' },
-  { id: 'schedule-2', title: 'Biology Lab', day: 'Tuesday', time: '11:00 AM', room: 'Science Wing', teacher: 'Jaxon Lee' },
-  { id: 'schedule-3', title: 'Creative Writing', day: 'Wednesday', time: '01:00 PM', room: 'Room 109', teacher: 'Sofia Kim' },
-  { id: 'schedule-4', title: 'World History', day: 'Thursday', time: '02:30 PM', room: 'Room 116', teacher: 'Lucas Morgan' },
-];
-
-const defaultBilling: BillingRecord[] = [
-  { id: 'billing-1', label: 'Tuition support', amount: 8200, due: '2026-06-30', status: 'pending', tenantSlug: 'demo-tenant' },
-  { id: 'billing-2', label: 'Technology services', amount: 3200, due: '2026-06-20', status: 'paid', tenantSlug: 'demo-tenant' },
-  { id: 'billing-3', label: 'Athletics lease', amount: 1750, due: '2026-07-05', status: 'unpaid', tenantSlug: 'demo-tenant' },
-];
-
-const defaultPlans: PlanPackage[] = [
-  { id: 'plan-basic', name: 'Basic', description: 'Up to 200 students, core school tools, and essential support.', price: 29, studentLimit: 200, durationDays: 30, serverCost: 1500 },
-  { id: 'plan-starter', name: 'Starter', description: 'Up to 500 students, basic school tools, local support.', price: 49, studentLimit: 500, durationDays: 30, serverCost: 2500 },
-  { id: 'plan-advance', name: 'Advance', description: 'Up to 1,500 students, reports, and enhanced communication.', price: 99, studentLimit: 1500, durationDays: 30, serverCost: 5000 },
-];
-
-const defaultAcademicSetup: AcademicSetup = {
-  classes: 18,
-  sections: 4,
-  subjects: 22,
-  shifts: ['Morning', 'Day'],
-  session: '2025-2026',
+export type Notice = {
+  _id?: ObjectId;
+  id: string;
+  title: string;
+  content: string;
+  date: string;
+  tenantSlug: string;
 };
 
-const defaultAdmissions: EnrollmentApplication[] = [
-  { id: 'app-1', studentName: 'Sofia Turner', grade: '6', status: 'pending', appliedOn: '2026-05-15' },
-  { id: 'app-2', studentName: 'Miguel Santos', grade: '8', status: 'approved', appliedOn: '2026-05-07' },
-  { id: 'app-3', studentName: 'Nina Patel', grade: '9', status: 'rejected', appliedOn: '2026-05-02' },
-];
-
-const defaultNotices: Notice[] = [
-  { id: 'notice-1', title: 'Campus closed for Eid', date: '2026-06-10', audience: 'All users', message: 'School will remain closed for Eid holidays. Classes resume on June 14.' },
-  { id: 'notice-2', title: 'Exam schedule published', date: '2026-06-01', audience: 'Students & Parents', message: 'Term exam timetable is available in the student portal.' },
-];
-
-const defaultTeacherPortal: TeacherPortalData = {
-  attendanceRate: '94%',
-  classesToday: 'Math, Science, History',
-  pendingHomework: 4,
-  gradebookEntries: [
-    { course: 'Algebra II', dueDate: '2026-06-12', status: 'Open' },
-    { course: 'Biology Lab', dueDate: '2026-06-14', status: 'Draft' },
-  ],
+export type AdmissionApplication = {
+  _id?: ObjectId;
+  id: string;
+  studentName: string;
+  grade: string;
+  parentName: string;
+  contactEmail: string;
+  contactPhone: string;
+  status: 'Pending' | 'Approved' | 'Rejected';
+  tenantSlug: string;
 };
 
-const defaultStudentPortal: StudentPortalData = {
-  studentId: 'S-2026-0042',
-  className: '7th Grade',
-  section: 'A',
-  attendancePct: 96,
-  results: [
-    { subject: 'Mathematics', score: '91%', grade: 'A-' },
-    { subject: 'English', score: '89%', grade: 'B+' },
-    { subject: 'Science', score: '94%', grade: 'A' },
-  ],
-  feeStatus: { paid: 4500, due: 1200 },
-};
-
-const defaultParentPortal: ParentPortalData = {
-  childName: 'Alina Hosein',
-  className: '5th Grade',
-  attendancePct: 98,
-  outstandingFees: 850,
-  teacherContact: 'Mrs. Sofia Kim',
-};
-
-function tenantScopeQuery(tenantSlugOrId: string) {
-  // Support multiple possible tenant keys stored in DB:
-  // - tenantSlug (used by onboardTenant currently)
-  // - tenantId (common alternative)
-  // - slug (if tenant slug was stored under a generic field)
-  return {
-    $or: [{ tenantSlug: tenantSlugOrId }, { tenantId: tenantSlugOrId }, { slug: tenantSlugOrId }],
-  };
-}
-
-export async function getTenantStudents(tenantSlug: string) {
-  if (!process.env.MONGODB_URI) {
-    return defaultStudents;
-  }
-
-  try {
-    const db = await getDatabase();
-    const records = await db.collection('students').find(tenantScopeQuery(tenantSlug)).toArray();
-    return records.map((r: any) => ({
-      id: r._id.toString(),
-      name: r.name,
-      grade: r.grade,
-      status: r.status,
-      enrolled: r.enrolled,
-      guardianName: r.guardianName || '',
-      guardianPhone: r.guardianPhone || '',
-      address: r.address || '',
-    })) as Student[];
-  } catch (error) {
-    console.error('Failed to load tenant students:', error);
-    return [];
-  }
-}
-
-export async function createTenantStudent(tenantSlug: string, name: string, grade: string, status: string, enrolled: string, guardianName: string, guardianPhone: string, address: string) {
-  if (!process.env.MONGODB_URI) return false;
-  try {
-    const db = await getDatabase();
-    await db.collection('students').insertOne({
-      tenantSlug,
-      name,
-      grade,
-      status,
-      enrolled,
-      guardianName,
-      guardianPhone,
-      address,
-    });
-    return true;
-  } catch (error) {
-    return false;
-  }
-}
-
-export async function getHeroImages() {
-  if (!process.env.MONGODB_URI) return [];
-  try {
-    const db = await getDatabase();
-    const records = await db.collection('heroImages').find().sort({ dateAdded: -1 }).toArray();
-    return records.map((r: any) => ({
-      id: r._id.toString(),
-      url: r.url,
-      caption: r.caption,
-      isActive: r.isActive,
-      dateAdded: r.dateAdded,
-    })) as HeroImage[];
-  } catch (error) {
-    return [];
-  }
-}
-
-export async function createHeroImage(payload: { url: string; caption: string }) {
-  if (!process.env.MONGODB_URI) return false;
-  try {
-    const db = await getDatabase();
-    await db.collection('heroImages').insertOne({ ...payload, isActive: true, dateAdded: new Date().toISOString() });
-    return true;
-  } catch (error) {
-    return false;
-  }
-}
-
-export async function updateHeroImageStatus(id: string, isActive: boolean) {
-  if (!process.env.MONGODB_URI) return false;
-  const db = await getDatabase();
-  let query: any = { id };
-  if (ObjectId.isValid(id)) query = { $or: [{ id }, { _id: new ObjectId(id) }] };
-  return (await db.collection('heroImages').updateOne(query, { $set: { isActive } })).modifiedCount > 0;
-}
-
-export async function deleteHeroImage(id: string) {
-  if (!process.env.MONGODB_URI) return false;
-  const db = await getDatabase();
-  let query: any = { id };
-  if (ObjectId.isValid(id)) query = { $or: [{ id }, { _id: new ObjectId(id) }] };
-  return (await db.collection('heroImages').deleteOne(query)).deletedCount > 0;
-}
-
-export async function getPlatformSettings() {
-  if (!process.env.MONGODB_URI) {
-    return defaultPlatformSettings;
-  }
-  try {
-    const db = await getDatabase();
-    const settings = await db.collection<PlatformSettings>('settings').findOne({ type: 'platform' });
-    return settings ? { platformName: settings.platformName, supportEmail: settings.supportEmail, supportPhone: settings.supportPhone, maintenanceMode: settings.maintenanceMode } : defaultPlatformSettings;
-  } catch (error) {
-    console.error('Failed to load settings:', error);
-    return defaultPlatformSettings;
-  }
-}
-
-export async function updatePlatformSettings(settings: Partial<PlatformSettings>) {
-  if (!process.env.MONGODB_URI) return false;
-  try {
-    const db = await getDatabase();
-    await db.collection('settings').updateOne({ type: 'platform' }, { $set: settings }, { upsert: true });
-    return true;
-  } catch (error) {
-    console.error('Failed to update settings:', error);
-    return false;
-  }
-}
-
-export async function getContactMessages() {
-  if (!process.env.MONGODB_URI) return [];
-  try {
-    const db = await getDatabase();
-    const records = await db.collection('contactMessages').find().sort({ date: -1 }).toArray();
-    return records.map((r: any) => ({
-      id: r._id.toString(),
-      name: r.name,
-      email: r.email,
-      subject: r.subject,
-      message: r.message,
-      date: r.date,
-      status: r.status,
-    })) as ContactMessage[];
-  } catch (error) {
-    console.error('Failed to load contact messages:', error);
-    return [];
-  }
-}
-
-export async function createContactMessage(payload: { name: string; email: string; subject: string; message: string; }) {
-  if (!process.env.MONGODB_URI) return false;
-  try {
-    const db = await getDatabase();
-    await db.collection('contactMessages').insertOne({ ...payload, date: new Date().toISOString(), status: 'unread' });
-    return true;
-  } catch (error) {
-    console.error('Failed to create contact message:', error);
-    return false;
-  }
-}
-
-export async function updateContactMessageStatus(id: string, status: 'read' | 'unread') {
-  if (!process.env.MONGODB_URI) return false;
-  try {
-    const db = await getDatabase();
-    let query: any = { id };
-    if (ObjectId.isValid(id)) query = { $or: [{ id }, { _id: new ObjectId(id) }] };
-    const result = await db.collection('contactMessages').updateOne(query, { $set: { status } });
-    return result.modifiedCount > 0;
-  } catch (error) {
-    return false;
-  }
-}
-
-export async function deleteContactMessage(id: string) {
-  if (!process.env.MONGODB_URI) return false;
-  try {
-    const db = await getDatabase();
-    let query: any = { id };
-    if (ObjectId.isValid(id)) query = { $or: [{ id }, { _id: new ObjectId(id) }] };
-    const result = await db.collection('contactMessages').deleteOne(query);
-    return result.deletedCount > 0;
-  } catch (error) {
-    return false;
-  }
-}
-
-export async function updateTenantStudent(tenantSlug: string, id: string, name: string, grade: string, status: string, enrolled: string, guardianName: string, guardianPhone: string, address: string) {
-  if (!process.env.MONGODB_URI) return false;
-  try {
-    const db = await getDatabase();
-    let query: any = { id, tenantSlug };
-    if (ObjectId.isValid(id)) query = { $or: [{ id, tenantSlug }, { _id: new ObjectId(id), tenantSlug }] };
-    
-    const result = await db.collection('students').updateOne(query, { $set: { name, grade, status, enrolled, guardianName, guardianPhone, address } });
-    return result.modifiedCount > 0;
-  } catch (error) {
-    return false;
-  }
-}
-
-export async function deleteTenantStudent(tenantSlug: string, id: string) {
-  if (!process.env.MONGODB_URI) return false;
-  try {
-    const db = await getDatabase();
-    let query: any = { id, tenantSlug };
-    if (ObjectId.isValid(id)) query = { $or: [{ id, tenantSlug }, { _id: new ObjectId(id), tenantSlug }] };
-
-    const result = await db.collection('students').deleteOne(query);
-    return result.deletedCount > 0;
-  } catch (error) {
-    return false;
-  }
-}
-
-export async function getTenantTeachers(tenantSlug: string) {
-  if (!process.env.MONGODB_URI) {
-    return defaultTeachers;
-  }
-
-  try {
-    const db = await getDatabase();
-    const records = await db.collection('teachers').find(tenantScopeQuery(tenantSlug)).toArray();
-    return records.map((r: any) => ({
-      id: r._id.toString(),
-      name: r.name,
-      subject: r.subject,
-      email: r.email,
-      status: r.status,
-    })) as Teacher[];
-  } catch (error) {
-    console.error('Failed to load tenant teachers:', error);
-    return [];
-  }
-}
-
-export async function createTenantTeacher(tenantSlug: string, name: string, subject: string, email: string, status: string) {
-  if (!process.env.MONGODB_URI) return false;
-  try {
-    const db = await getDatabase();
-    await db.collection('teachers').insertOne({
-      tenantSlug,
-      name,
-      subject,
-      email,
-      status,
-    });
-    return true;
-  } catch (error) {
-    return false;
-  }
-}
-
-export async function updateTenantTeacher(tenantSlug: string, id: string, name: string, subject: string, email: string, status: string) {
-  if (!process.env.MONGODB_URI) return false;
-  try {
-    const db = await getDatabase();
-    let query: any = { id, tenantSlug };
-    if (ObjectId.isValid(id)) query = { $or: [{ id, tenantSlug }, { _id: new ObjectId(id), tenantSlug }] };
-    
-    const result = await db.collection('teachers').updateOne(query, { $set: { name, subject, email, status } });
-    return result.modifiedCount > 0;
-  } catch (error) {
-    return false;
-  }
-}
-
-export async function deleteTenantTeacher(tenantSlug: string, id: string) {
-  if (!process.env.MONGODB_URI) return false;
-  try {
-    const db = await getDatabase();
-    let query: any = { id, tenantSlug };
-    if (ObjectId.isValid(id)) query = { $or: [{ id, tenantSlug }, { _id: new ObjectId(id), tenantSlug }] };
-
-    const result = await db.collection('teachers').deleteOne(query);
-    return result.deletedCount > 0;
-  } catch (error) {
-    return false;
-  }
-}
-
-export async function getTenantSchedule(tenantSlug: string) {
-  if (!process.env.MONGODB_URI) {
-    return defaultSchedule;
-  }
-
-  try {
-    const db = await getDatabase();
-    const records = await db.collection('classes').find(tenantScopeQuery(tenantSlug)).toArray();
-    return records.map((r: any) => ({
-      id: r._id.toString(),
-      title: r.title,
-      day: r.day,
-      time: r.time,
-      room: r.room,
-      teacher: r.teacher,
-    })) as ClassSchedule[];
-  } catch (error) {
-    console.error('Failed to load tenant schedule:', error);
-    return [];
-  }
-}
-
-export async function createTenantClass(tenantSlug: string, title: string, day: string, time: string, room: string, teacher: string) {
-  if (!process.env.MONGODB_URI) return false;
-  try {
-    const db = await getDatabase();
-    await db.collection('classes').insertOne({
-      tenantSlug,
-      title,
-      day,
-      time,
-      room,
-      teacher,
-    });
-    return true;
-  } catch (error) {
-    return false;
-  }
-}
-
-export async function updateTenantClass(tenantSlug: string, id: string, title: string, day: string, time: string, room: string, teacher: string) {
-  if (!process.env.MONGODB_URI) return false;
-  try {
-    const db = await getDatabase();
-    let query: any = { id, tenantSlug };
-    if (ObjectId.isValid(id)) query = { $or: [{ id, tenantSlug }, { _id: new ObjectId(id), tenantSlug }] };
-    
-    const result = await db.collection('classes').updateOne(query, { $set: { title, day, time, room, teacher } });
-    return result.modifiedCount > 0;
-  } catch (error) {
-    return false;
-  }
-}
-
-export async function deleteTenantClass(tenantSlug: string, id: string) {
-  if (!process.env.MONGODB_URI) return false;
-  try {
-    const db = await getDatabase();
-    let query: any = { id, tenantSlug };
-    if (ObjectId.isValid(id)) query = { $or: [{ id, tenantSlug }, { _id: new ObjectId(id), tenantSlug }] };
-
-    const result = await db.collection('classes').deleteOne(query);
-    return result.deletedCount > 0;
-  } catch (error) {
-    return false;
-  }
-}
-
-export async function getTenantAttendance(tenantSlug: string) {
-  if (!process.env.MONGODB_URI) return [];
-  try {
-    const db = await getDatabase();
-    const records = await db.collection('attendance').find(tenantScopeQuery(tenantSlug)).sort({ date: -1 }).toArray();
-    return records.map((r: any) => ({
-      id: r._id.toString(),
-      studentId: r.studentId,
-      studentName: r.studentName,
-      date: r.date,
-      status: r.status,
-    })) as AttendanceRecord[];
-  } catch (error) {
-    console.error('Failed to load attendance:', error);
-    return [];
-  }
-}
-
-export async function createTenantAttendance(tenantSlug: string, studentId: string, studentName: string, date: string, status: string) {
-  if (!process.env.MONGODB_URI) return false;
-  try {
-    const db = await getDatabase();
-    await db.collection('attendance').insertOne({ tenantSlug, studentId, studentName, date, status });
-    return true;
-  } catch (error) { return false; }
-}
-
-export async function updateTenantAttendance(tenantSlug: string, id: string, studentId: string, studentName: string, date: string, status: string) {
-  if (!process.env.MONGODB_URI) return false;
-  try {
-    const db = await getDatabase();
-    let query: any = { id, tenantSlug };
-    if (ObjectId.isValid(id)) query = { $or: [{ id, tenantSlug }, { _id: new ObjectId(id), tenantSlug }] };
-    const result = await db.collection('attendance').updateOne(query, { $set: { studentId, studentName, date, status } });
-    return result.modifiedCount > 0;
-  } catch (error) { return false; }
-}
-
-export async function deleteTenantAttendance(tenantSlug: string, id: string) {
-  if (!process.env.MONGODB_URI) return false;
-  try {
-    const db = await getDatabase();
-    let query: any = { id, tenantSlug };
-    if (ObjectId.isValid(id)) query = { $or: [{ id, tenantSlug }, { _id: new ObjectId(id), tenantSlug }] };
-    const result = await db.collection('attendance').deleteOne(query);
-    return result.deletedCount > 0;
-  } catch (error) { return false; }
-}
-
-export async function getTenantBilling(tenantSlug: string) {
-  if (!process.env.MONGODB_URI) {
-    return defaultBilling;
-  }
-
-  try {
-    const db = await getDatabase();
-    const records = await db.collection('billing').find(tenantScopeQuery(tenantSlug)).toArray();
-    return records.map((r: any) => ({
-      id: r._id.toString(),
-      label: r.label,
-      amount: r.amount,
-      due: r.due,
-      status: r.status,
-    })) as BillingRecord[];
-  } catch (error) {
-    console.error('Failed to load tenant billing:', error);
-    return [];
-  }
-}
-
-export async function getSubscriptionPlans() {
-  if (!process.env.MONGODB_URI) {
-    return defaultPlans;
-  }
-
-  try {
-    const db = await getDatabase();
-    const plans = await db.collection<PlanPackage>('plans').find().toArray();
-    if (plans.length === 0) {
-      // Seed plans initially if they don't exist
-      await db.collection('plans').insertMany(defaultPlans as any);
-      return defaultPlans;
+export async function getPlatformSettings(): Promise<PlatformSettings> {
+    if (process.env.MONGODB_URI) {
+        try {
+            const db = await getDatabase();
+            const settings = await db.collection('settings').findOne({});
+            if (settings) {
+                return {
+                    platformName: settings.platformName || 'Zass',
+                    supportEmail: settings.supportEmail || 'support@zass.edu',
+                    supportPhone: settings.supportPhone || '+8801700000000',
+                    maintenanceMode: settings.maintenanceMode || false,
+                };
+            }
+        } catch (error) {}
     }
-    return plans.map((p) => ({ ...p, id: (p as any).id || (p as any)._id.toString() })) as PlanPackage[];
-  } catch (error) {
-    console.error('Failed to load plans:', error);
-    return defaultPlans;
-  }
+    // Default platform settings fallback
+    return {
+        platformName: 'Zass',
+        supportEmail: 'support@zass.edu',
+        supportPhone: '+8801700000000',
+        maintenanceMode: false,
+    };
 }
 
-export async function updatePlan(id: string, price: number, name?: string, studentLimit?: number, durationDays?: number, serverCost?: number) {
-  if (!process.env.MONGODB_URI) return false;
-  try {
-    const db = await getDatabase();
-    const updateDoc: any = { price };
-    if (name) updateDoc.name = name;
-    if (studentLimit !== undefined) updateDoc.studentLimit = studentLimit;
-    if (durationDays !== undefined) updateDoc.durationDays = durationDays;
-    if (serverCost !== undefined) updateDoc.serverCost = serverCost;
-
-    const result = await db.collection('plans').updateOne({ id }, { $set: updateDoc });
-
-    // Dynamically cascade plan price changes to update Total Revenue for existing tenants
-    if (result.matchedCount > 0) {
-      const updatedPlan = await db.collection('plans').findOne({ id });
-      if (updatedPlan && updatedPlan.name) {
-        await db.collection('tenants').updateMany(
-          { plan: updatedPlan.name },
-          { $set: { revenue: price } }
-        );
-      }
+export async function getSubscriptionPlans(): Promise<PlanPackage[]> {
+    if (process.env.MONGODB_URI) {
+        try {
+            const db = await getDatabase();
+            const plans = await db.collection('plans').find().toArray();
+            if (plans.length > 0) {
+                return plans.map(p => ({
+                    id: p.id,
+                    name: p.name,
+                    description: p.description,
+                    price: p.price,
+                    studentLimit: p.studentLimit,
+                    durationDays: p.durationDays,
+                    serverCost: p.serverCost
+                }));
+            }
+        } catch (error) {}
     }
-
-    return result.modifiedCount > 0;
-  } catch (error) {
-    console.error('Failed to update plan:', error);
-    return false;
-  }
+    // Default subscription plans fallback
+    return [
+        {
+            id: 'starter',
+            name: 'Starter',
+            description: 'Essential features for small schools.',
+            price: 5000,
+            studentLimit: 500,
+            durationDays: 30,
+            serverCost: 1000,
+        },
+        {
+            id: 'basic',
+            name: 'Basic',
+            description: 'Advanced features for growing schools.',
+            price: 10000,
+            studentLimit: 1500,
+            durationDays: 30,
+            serverCost: 2000,
+        },
+    ];
 }
 
-export async function createPlan(name: string, description: string, price: number, studentLimit: number, durationDays: number, serverCost?: number) {
-  if (!process.env.MONGODB_URI) return false;
-  try {
-    const db = await getDatabase();
-    const id = `plan-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now()}`;
-    const newPlan = { id, name, description, price, studentLimit, durationDays, serverCost };
-    await db.collection('plans').insertOne(newPlan);
-    return true;
-  } catch (error) {
-    console.error('Failed to create plan:', error);
-    return false;
-  }
+export async function getHeroImages(): Promise<HeroImage[]> {
+    if (process.env.MONGODB_URI) {
+        try {
+            const db = await getDatabase();
+            const images = await db.collection('heroImages').find().toArray();
+            if (images.length > 0) {
+                return images.map(i => ({
+                    id: i._id.toString(),
+                    url: i.url,
+                    caption: i.caption,
+                    isActive: i.isActive
+                }));
+            }
+        } catch (error) {}
+    }
+    return [
+        {
+            id: 'hero_1',
+            url: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&q=80&w=2070',
+            caption: 'Scale Your School Infrastructure with One Unified Platform.',
+            isActive: true,
+        }
+    ];
+}
+
+export async function getPlatformAnalytics(): Promise<PlatformAnalytics> {
+    if (!process.env.MONGODB_URI) {
+        return { activeSchools: 2, totalStudents: 2925, pendingSchools: 1, totalRevenue: 243000 };
+    }
+    try {
+        const db = await getDatabase();
+        const activeSchoolsCount = await db.collection('tenants').countDocuments({ status: 'active' });
+        const pendingSchoolsCount = await db.collection('tenants').countDocuments({ status: 'pending' });
+        const totalStudentsCount = await db.collection('students').countDocuments();
+        
+        const activeTenants = await db.collection('tenants').find({ status: 'active' }).toArray();
+        const totalRevenue = activeTenants.reduce((acc, t) => acc + (t.revenue || 0), 0);
+
+        return {
+            activeSchools: activeSchoolsCount,
+            totalStudents: totalStudentsCount,
+            pendingSchools: pendingSchoolsCount,
+            totalRevenue: totalRevenue,
+        };
+    } catch (error) {
+        return { activeSchools: 0, totalStudents: 0, pendingSchools: 0, totalRevenue: 0 };
+    }
+}
+
+export async function getAllBillingRecords(): Promise<BillingRecord[]> {
+    if (!process.env.MONGODB_URI) {
+        return [];
+    }
+    try {
+        const db = await getDatabase();
+        const records = await db.collection('billing').find().sort({ due: -1 }).toArray();
+        return records.map(r => ({ id: r._id.toString(), tenantSlug: r.tenantSlug, label: r.label, amount: r.amount, due: r.due, status: r.status })) as BillingRecord[];
+    } catch (error) {
+        return [];
+    }
+}
+
+export async function updatePlan(id: string, price: number, name: string, limit: number, durationDays: number, serverCost: number) {
+    if (!process.env.MONGODB_URI) return false;
+    try {
+        const db = await getDatabase();
+        await db.collection('plans').updateOne({ id }, { $set: { price, name, studentLimit: limit, durationDays, serverCost } });
+        return true;
+    } catch (error) {
+        return false;
+    }
+}
+
+export async function createPlan(name: string, description: string, price: number, limit: number, durationDays: number, serverCost: number) {
+    if (!process.env.MONGODB_URI) return false;
+    try {
+        const db = await getDatabase();
+        const id = name.toLowerCase().replace(/[^a-z0-9]/g, '-');
+        await db.collection('plans').insertOne({ id, name, description, price, studentLimit: limit, durationDays, serverCost });
+        return true;
+    } catch (error) {
+        return false;
+    }
 }
 
 export async function deletePlan(id: string) {
-  if (!process.env.MONGODB_URI) return false;
-  try {
-    const db = await getDatabase();
-    let query: any = { id };
-    if (ObjectId.isValid(id)) query = { $or: [{ id }, { _id: new ObjectId(id) }] };
-    const result = await db.collection('plans').deleteOne(query);
-    return result.deletedCount > 0;
-  } catch (error) {
-    console.error('Failed to delete plan:', error);
-    return false;
-  }
-}
-
-export async function getTenantAcademicSetup(tenantSlug: string) {
-  if (!process.env.MONGODB_URI) {
-    return defaultAcademicSetup;
-  }
-
-  try {
-    const db = await getDatabase();
-    const result = await db.collection<AcademicSetup>('academicSetup').findOne(tenantScopeQuery(tenantSlug));
-    return result ?? defaultAcademicSetup;
-  } catch (error) {
-    console.error('Failed to load academic setup:', error);
-    return defaultAcademicSetup;
-  }
-}
-
-export async function getTenantAdmissions(tenantSlug: string) {
-  if (!process.env.MONGODB_URI) {
-    return defaultAdmissions;
-  }
-
-  try {
-    const db = await getDatabase();
-    return (await db.collection<EnrollmentApplication>('admissions').find(tenantScopeQuery(tenantSlug)).toArray()) as EnrollmentApplication[];
-  } catch (error) {
-    console.error('Failed to load admissions:', error);
-    return defaultAdmissions;
-  }
-}
-
-export async function getTenantNoticeBoard(tenantSlug: string) {
-  if (!process.env.MONGODB_URI) {
-    return defaultNotices;
-  }
-
-  try {
-    const db = await getDatabase();
-    const records = await db.collection('notices').find(tenantScopeQuery(tenantSlug)).toArray();
-    return records.map((r: any) => ({
-      id: r._id.toString(),
-      title: r.title,
-      date: r.date,
-      audience: r.audience,
-      message: r.message,
-    })) as Notice[];
-  } catch (error) {
-    console.error('Failed to load notices:', error);
-    return defaultNotices;
-  }
-}
-
-export async function getTeacherPortalData(tenantSlug: string) {
-  if (!process.env.MONGODB_URI) {
-    return defaultTeacherPortal;
-  }
-
-  try {
-    const db = await getDatabase();
-    return (await db.collection<TeacherPortalData>('teacherPortal').findOne(tenantScopeQuery(tenantSlug))) ?? defaultTeacherPortal;
-  } catch (error) {
-    console.error('Failed to load teacher portal data:', error);
-    return defaultTeacherPortal;
-  }
-}
-
-export async function getStudentPortalData(tenantSlug: string) {
-  if (!process.env.MONGODB_URI) {
-    return defaultStudentPortal;
-  }
-
-  try {
-    const db = await getDatabase();
-    return (await db.collection<StudentPortalData>('studentPortal').findOne(tenantScopeQuery(tenantSlug))) ?? defaultStudentPortal;
-  } catch (error) {
-    console.error('Failed to load student portal data:', error);
-    return defaultStudentPortal;
-  }
-}
-
-export async function getParentPortalData(tenantSlug: string) {
-  if (!process.env.MONGODB_URI) {
-    return defaultParentPortal;
-  }
-
-  try {
-    const db = await getDatabase();
-    return (await db.collection<ParentPortalData>('parentPortal').findOne(tenantScopeQuery(tenantSlug))) ?? defaultParentPortal;
-  } catch (error) {
-    console.error('Failed to load parent portal data:', error);
-    return defaultParentPortal;
-  }
-}
-
-export async function getAllBillingRecords() {
-  if (!process.env.MONGODB_URI) {
-    return defaultBilling;
-  }
-
-  try {
-    const db = await getDatabase();
-    const records = await db.collection('billing').find().toArray();
-    return records.map((r: any) => ({
-      id: r._id.toString(),
-      tenantSlug: r.tenantSlug || 'N/A',
-      label: r.label,
-      amount: r.amount,
-      due: r.due,
-      status: r.status,
-    })) as BillingRecord[];
-  } catch (error) {
-    console.error('Failed to load all billing:', error);
-    return [];
-  }
-}
-
-export async function getPlatformAnalytics() {
-  const tenants = await getAllTenants();
-  
-  const nonDemoTenants = tenants.filter(tenant => tenant.category !== 'demo');
-  
-  const totalStudents = nonDemoTenants.reduce((sum, tenant) => sum + tenant.students, 0);
-  const totalTeachers = nonDemoTenants.reduce((sum, tenant) => sum + tenant.teachers, 0);
-  const totalRevenue = nonDemoTenants.reduce((sum, tenant) => sum + tenant.revenue, 0);
-
-  return {
-    totalSchools: nonDemoTenants.length,
-    activeSchools: nonDemoTenants.filter((tenant) => tenant.status === 'active').length,
-    pendingSchools: nonDemoTenants.filter((tenant) => tenant.status === 'pending').length,
-    suspendedSchools: nonDemoTenants.filter((tenant) => tenant.status === 'suspended').length,
-    totalStudents,
-    totalTeachers,
-    totalRevenue,
-  };
-}
-
-export type PlatformAnalytics = Awaited<ReturnType<typeof getPlatformAnalytics>>;
-
-export type OnboardTenantPayload = {
-  name: string;
-  slug: string;
-  city: string;
-  description: string;
-  plan: string;
-  adminEmail: string;
-  adminPassword: string;
-  phone: string;
-  authorityName: string;
-  email: string;
-  category?: 'demo' | 'trusted';
-};
-
-export async function onboardTenant(payload: OnboardTenantPayload) {
-  if (!process.env.MONGODB_URI) {
-    throw new Error('MongoDB is not configured. Cannot onboard a new tenant in demo mode.');
-  }
-
-  const db = await getDatabase();
-  const existingTenant = await db.collection('tenants').findOne({ slug: payload.slug });
-  if (existingTenant) {
-    throw new Error('A tenant with that slug already exists.');
-  }
-
-  // Determine initial revenue dynamically based on the selected subscription plan
-  const plans = await getSubscriptionPlans();
-  const selectedPlan = plans.find((p) => p.name === payload.plan || p.id === payload.plan);
-
-  const tenant = {
-    name: payload.name,
-    slug: payload.slug,
-    city: payload.city,
-    description: payload.description,
-    plan: payload.plan,
-    status: 'pending' as const,
-    students: 1,
-    teachers: 1,
-    classes: 1,
-    revenue: selectedPlan ? selectedPlan.price : 0,
-    phone: payload.phone,
-    authorityName: payload.authorityName,
-    email: payload.email,
-    category: payload.category || 'demo',
-  };
-
-  const defaultStudent = {
-    tenantSlug: payload.slug,
-    name: 'New Student One',
-    grade: '1',
-    status: 'Active',
-    enrolled: new Date().toISOString().split('T')[0],
-    guardianName: 'Sample Guardian',
-    guardianPhone: '+8801700000000',
-    address: payload.city,
-  };
-
-  const defaultTeacher = {
-    tenantSlug: payload.slug,
-    name: 'School Admin',
-    subject: 'Administration',
-    email: payload.adminEmail,
-    status: 'Available',
-  };
-
-  const defaultClass = {
-    tenantSlug: payload.slug,
-    title: 'Welcome Orientation',
-    day: 'Monday',
-    time: '10:00 AM',
-    room: 'Main Hall',
-    teacher: defaultTeacher.name,
-  };
-
-  const duration = selectedPlan?.durationDays || 30;
-  const defaultInvoice = {
-    tenantSlug: payload.slug,
-    label: `${payload.plan} Plan Subscription`,
-    amount: selectedPlan ? selectedPlan.price : 1200,
-    due: new Date(new Date().setDate(new Date().getDate() + duration)).toISOString().split('T')[0],
-    status: 'pending' as const,
-  };
-
-  // Create tenant record (or ensure it exists) so tenant pages can rely on MongoDB-backed state.
-  const insertResult = await db.collection('tenants').insertOne(tenant);
-
-  // Provision required tenant-scoped data.
-  // Using insertOne because these defaults should only be created at tenant onboarding time.
-  await db.collection('students').insertOne(defaultStudent);
-  await db.collection('teachers').insertOne(defaultTeacher);
-  await db.collection('classes').insertOne(defaultClass);
-  await db.collection('billing').insertOne(defaultInvoice);
-
-  // Provision additional tenant-scoped collections so the tenant dashboard
-  // works fully with persisted data (no demo fallbacks) right after onboarding.
-  await db.collection('academicSetup').insertOne({ tenantSlug: payload.slug, ...defaultAcademicSetup });
-  await db.collection('admissions').insertMany(
-    defaultAdmissions.map((app) => ({
-      ...app,
-      tenantSlug: payload.slug,
-    })),
-  );
-  await db.collection('notices').insertMany(
-    defaultNotices.map((notice) => ({
-      ...notice,
-      tenantSlug: payload.slug,
-    })),
-  );
-  await db.collection('teacherPortal').insertOne({ tenantSlug: payload.slug, ...defaultTeacherPortal });
-  await db.collection('studentPortal').insertOne({ tenantSlug: payload.slug, ...defaultStudentPortal });
-  await db.collection('parentPortal').insertOne({ tenantSlug: payload.slug, ...defaultParentPortal });
-
-  // Also ensure the admin user exists for tenant.
-  await signUpUser(payload.adminEmail, payload.adminPassword, payload.slug, 'admin');
-
-  return {
-    ...tenant,
-    id: insertResult.insertedId.toString(),
-  } as Tenant & { id: string };
+    if (!process.env.MONGODB_URI) return false;
+    try {
+        const db = await getDatabase();
+        await db.collection('plans').deleteOne({ id });
+        return true;
+    } catch (error) {
+        return false;
+    }
 }
 
 export async function createTenantInvoice(tenantSlug: string, label: string, amount: number, due: string) {
-  if (!process.env.MONGODB_URI) return false;
-  try {
-    const db = await getDatabase();
-    await db.collection('billing').insertOne({
-      tenantSlug,
-      label,
-      amount,
-      due,
-      status: 'pending',
-    });
-    return true;
-  } catch (error) {
-    return false;
-  }
+    if (!process.env.MONGODB_URI) return false;
+    try {
+        const db = await getDatabase();
+        await db.collection('billing').insertOne({ tenantSlug, label, amount, due, status: 'pending' });
+        return true;
+    } catch (error) {
+        return false;
+    }
 }
 
 export async function updateTenantInvoice(id: string, status: 'paid' | 'unpaid' | 'pending') {
-  if (!process.env.MONGODB_URI) return false;
-  try {
-    const db = await getDatabase();
-    let query: any = { id };
-    if (ObjectId.isValid(id)) query = { $or: [{ id }, { _id: new ObjectId(id) }] };
-    
-    const result = await db.collection('billing').updateOne(query, { $set: { status } });
-    return result.modifiedCount > 0;
-  } catch (error) {
-    return false;
-  }
+    if (!process.env.MONGODB_URI) return false;
+    try {
+        const db = await getDatabase();
+        await db.collection('billing').updateOne({ _id: new ObjectId(id) }, { $set: { status } });
+        return true;
+    } catch (error) {
+        return false;
+    }
 }
 
 export async function deleteTenantInvoice(id: string) {
-  if (!process.env.MONGODB_URI) return false;
-  try {
-    const db = await getDatabase();
-    let query: any = { id };
-    if (ObjectId.isValid(id)) query = { $or: [{ id }, { _id: new ObjectId(id) }] };
+    if (!process.env.MONGODB_URI) return false;
+    try {
+        const db = await getDatabase();
+        await db.collection('billing').deleteOne({ _id: new ObjectId(id) });
+        return true;
+    } catch (error) {
+        return false;
+    }
+}
 
-    const result = await db.collection('billing').deleteOne(query);
-    return result.deletedCount > 0;
-  } catch (error) {
-    return false;
-  }
+export async function updatePlatformSettings(payload: { platformName: string; supportEmail: string; supportPhone: string; maintenanceMode: boolean }) {
+    if (!process.env.MONGODB_URI) return false;
+    try {
+        const db = await getDatabase();
+        await db.collection('settings').updateOne({}, { $set: payload }, { upsert: true });
+        return true;
+    } catch (error) {
+        return false;
+    }
+}
+
+export async function updateContactMessageStatus(id: string, status: 'read' | 'unread') {
+    if (!process.env.MONGODB_URI) return false;
+    try {
+        const db = await getDatabase();
+        await db.collection('contactMessages').updateOne({ _id: new ObjectId(id) }, { $set: { status } });
+        return true;
+    } catch (error) {
+        return false;
+    }
+}
+
+export async function deleteContactMessage(id: string) {
+    if (!process.env.MONGODB_URI) return false;
+    try {
+        const db = await getDatabase();
+        await db.collection('contactMessages').deleteOne({ _id: new ObjectId(id) });
+        return true;
+    } catch (error) {
+        return false;
+    }
+}
+
+export async function createHeroImage(payload: { url: string; caption: string }) {
+    if (!process.env.MONGODB_URI) return false;
+    try {
+        const db = await getDatabase();
+        await db.collection('heroImages').insertOne({ ...payload, isActive: true });
+        return true;
+    } catch (error) {
+        return false;
+    }
+}
+
+export async function updateHeroImageStatus(id: string, isActive: boolean) {
+    if (!process.env.MONGODB_URI) return false;
+    try {
+        const db = await getDatabase();
+        await db.collection('heroImages').updateOne({ _id: new ObjectId(id) }, { $set: { isActive } });
+        return true;
+    } catch (error) {
+        return false;
+    }
+}
+
+export async function deleteHeroImage(id: string) {
+    if (!process.env.MONGODB_URI) return false;
+    try {
+        const db = await getDatabase();
+        await db.collection('heroImages').deleteOne({ _id: new ObjectId(id) });
+        return true;
+    } catch (error) {
+        return false;
+    }
+}
+
+export async function getTenantBilling(tenantSlug: string): Promise<BillingRecord[]> {
+    if (!process.env.MONGODB_URI) {
+        return [];
+    }
+    try {
+        const db = await getDatabase();
+        const records = await db.collection('billing').find({ tenantSlug }).sort({ due: -1 }).toArray();
+        return records.map(r => ({ id: r._id.toString(), tenantSlug: r.tenantSlug, label: r.label, amount: r.amount, due: r.due, status: r.status })) as BillingRecord[];
+    } catch (error) {
+        return [];
+    }
+}
+
+export async function getTenantStudents(tenantSlug: string): Promise<Student[]> {
+    if (!process.env.MONGODB_URI) {
+        return [];
+    }
+    try {
+        const db = await getDatabase();
+        const students = await db.collection('students').find({ tenantSlug }).toArray();
+        return students.map(s => ({
+            id: s._id.toString(),
+            name: s.name,
+            grade: s.grade,
+            status: s.status,
+            enrolled: s.enrolled,
+            guardianName: s.guardianName,
+            guardianPhone: s.guardianPhone,
+            address: s.address,
+            tenantSlug: s.tenantSlug
+        })) as Student[];
+    } catch (error) {
+        return [];
+    }
+}
+
+export async function getTenantTeachers(tenantSlug: string): Promise<Teacher[]> {
+    if (!process.env.MONGODB_URI) {
+        return [];
+    }
+    try {
+        const db = await getDatabase();
+        const teachers = await db.collection('teachers').find({ tenantSlug }).toArray();
+        return teachers.map(t => ({
+            id: t._id.toString(),
+            name: t.name,
+            subject: t.subject,
+            email: t.email,
+            status: t.status,
+            tenantSlug: t.tenantSlug
+        })) as Teacher[];
+    } catch (error) {
+        return [];
+    }
+}
+
+export async function getContactMessages(): Promise<ContactMessage[]> {
+    if (!process.env.MONGODB_URI) {
+        return [];
+    }
+    try {
+        const db = await getDatabase();
+        const messages = await db.collection('contactMessages').find().sort({ date: -1 }).toArray();
+        return messages.map(m => ({ id: m._id.toString(), name: m.name, email: m.email, subject: m.subject, message: m.message, date: m.date, status: m.status })) as ContactMessage[];
+    } catch (error) {
+        return [];
+    }
 }

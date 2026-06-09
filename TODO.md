@@ -4,7 +4,6 @@
 - [ ] Add CRUD functions to `lib/school.ts`:
   - [ ] students (create/update/delete)
   - [ ] teachers (create/update/delete)
-  - [ ] schedule (classes collection CRUD)
   - [ ] billing (billing collection CRUD)
   - [ ] school admin / academic setup (academicSetup CRUD + admissions/notices CRUD if needed)
   - [ ] settings (tenant profile CRUD in `tenants` collection)
@@ -14,7 +13,6 @@
 - [ ] Add tenant-scoped API routes under `app/api/tenants/[tenant]/...`:
   - [ ] `students` (list/create + update/delete)
   - [ ] `teachers`
-  - [ ] `schedule`
   - [ ] `billing`
   - [ ] `admin` (academic setup, admissions, notices)
   - [ ] `settings`
@@ -28,7 +26,6 @@
   - [ ] `app/[tenant]/admin/page.tsx`
   - [ ] `app/[tenant]/students/page.tsx`
   - [ ] `app/[tenant]/teachers/page.tsx`
-  - [ ] `app/[tenant]/schedule/page.tsx`
   - [ ] `app/[tenant]/billing/page.tsx`
   - [ ] `app/[tenant]/teacher/page.tsx`
   - [ ] `app/[tenant]/student/page.tsx`

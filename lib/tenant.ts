@@ -10,7 +10,6 @@ export type Tenant = {
   status: 'active' | 'pending' | 'suspended';
   students: number;
   teachers: number;
-  classes: number;
   revenue: number;
   activationDate?: string;
   subscriptionExpiresAt?: string;
@@ -34,7 +33,6 @@ const defaultTenants: Tenant[] = [
     status: 'active',
     students: 1280,
     teachers: 72,
-    classes: 38,
     revenue: 98000,
     activationDate: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
     subscriptionExpiresAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(), // Expired for demo notifications
@@ -53,7 +51,6 @@ const defaultTenants: Tenant[] = [
     status: 'pending',
     students: 940,
     teachers: 56,
-    classes: 27,
     revenue: 47000,
     phone: '+8801700000002',
     authorityName: 'Ms. Farhana Haque',
@@ -70,7 +67,6 @@ const defaultTenants: Tenant[] = [
     status: 'active',
     students: 1645,
     teachers: 89,
-    classes: 54,
     revenue: 145000,
     activationDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
     subscriptionExpiresAt: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString(),
@@ -102,10 +98,6 @@ export async function getAllTenants() {
           $or: [{ tenantSlug: tenant.slug }, { tenantId: tenant.slug }, { slug: tenant.slug }]
         });
 
-        const classCount = await db.collection('classes').countDocuments({
-          $or: [{ tenantSlug: tenant.slug }, { tenantId: tenant.slug }, { slug: tenant.slug }]
-        });
-
         return {
           id: tenant._id.toString(),
           name: tenant.name,
@@ -116,7 +108,6 @@ export async function getAllTenants() {
           status: tenant.status ?? 'active',
           students: studentCount,
           teachers: teacherCount,
-          classes: classCount,
           revenue: tenant.revenue ?? 0,
           activationDate: tenant.activationDate,
           subscriptionExpiresAt: tenant.subscriptionExpiresAt,
@@ -168,10 +159,6 @@ export async function getTenantBySlug(slug: string) {
       $or: [{ tenantSlug: tenant.slug }, { tenantId: tenant.slug }, { slug: tenant.slug }]
     });
 
-    const classCount = await db.collection('classes').countDocuments({
-      $or: [{ tenantSlug: tenant.slug }, { tenantId: tenant.slug }, { slug: tenant.slug }]
-    });
-
     return {
       id: tenant._id.toString(),
       name: tenant.name,
@@ -182,7 +169,6 @@ export async function getTenantBySlug(slug: string) {
       status: tenant.status ?? 'active',
       students: studentCount,
       teachers: teacherCount,
-      classes: classCount,
       revenue: tenant.revenue ?? 0,
       activationDate: tenant.activationDate,
       subscriptionExpiresAt: tenant.subscriptionExpiresAt,
@@ -260,7 +246,6 @@ export async function deleteTenant(slug: string) {
       db.collection('users').deleteMany({ tenantSlug: slug }),
       db.collection('students').deleteMany(tenantScope),
       db.collection('teachers').deleteMany(tenantScope),
-      db.collection('classes').deleteMany(tenantScope),
       db.collection('billing').deleteMany(tenantScope),
       db.collection('academicSetup').deleteMany(tenantScope),
       db.collection('admissions').deleteMany(tenantScope),
@@ -269,6 +254,7 @@ export async function deleteTenant(slug: string) {
       db.collection('studentPortal').deleteMany(tenantScope),
       db.collection('parentPortal').deleteMany(tenantScope),
       db.collection('attendance').deleteMany(tenantScope),
+      db.collection('schedule').deleteMany(tenantScope),
     ]);
 
     return result.deletedCount > 0;

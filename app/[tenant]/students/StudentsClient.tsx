@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { addStudentAction, updateStudentAction, deleteStudentAction } from './actions';
+import { useRouter } from 'next/navigation';
+import { addStudentAction, updateStudentAction, deleteStudentAction } from '../student-actions';
 import type { Student } from '../../../lib/school';
 import type { Tenant } from '../../../lib/tenant';
 
@@ -12,6 +13,7 @@ export default function StudentsClient({
   students: Student[];
   tenant: Tenant;
 }) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
@@ -36,10 +38,12 @@ export default function StudentsClient({
       if (editingStudent) {
         updateStudentAction(tenant.slug, editingStudent.id, form.name, form.grade, form.status, form.enrolled, form.guardianName, form.guardianPhone, form.address).then(() => {
           setIsModalOpen(false);
+          router.refresh();
         });
       } else {
         addStudentAction(tenant.slug, form.name, form.grade, form.status, form.enrolled, form.guardianName, form.guardianPhone, form.address).then(() => {
           setIsModalOpen(false);
+          router.refresh();
         });
       }
     });
@@ -48,7 +52,9 @@ export default function StudentsClient({
   const handleDelete = (id: string) => {
     if (confirm('Are you sure you want to delete this student record?')) {
       startTransition(() => {
-        deleteStudentAction(tenant.slug, id);
+        deleteStudentAction(tenant.slug, id).then(() => {
+          router.refresh();
+        });
       });
     }
   };

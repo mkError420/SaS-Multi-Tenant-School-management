@@ -1,22 +1,52 @@
 'use server';
 
-import { createTenantTeacher, updateTenantTeacher, deleteTenantTeacher } from '../../lib/school';
 import { revalidatePath } from 'next/cache';
+import { getDatabase } from '../../lib/mongodb';
+import { ObjectId } from 'mongodb';
 
 export async function addTeacherAction(tenantSlug: string, name: string, subject: string, email: string, status: string) {
-  const success = await createTenantTeacher(tenantSlug, name, subject, email, status);
-  if (success) revalidatePath(`/${tenantSlug}`);
-  return success ? { success: true } : { success: false, error: 'Failed to add teacher.' };
+  try {
+    const db = await getDatabase();
+    const teacherDoc = {
+      tenantSlug,
+      name,
+      subject,
+      email,
+      status,
+    };
+    await db.collection('teachers').insertOne(teacherDoc);
+    await db.collection('tenants').updateOne({ slug: tenantSlug }, { $inc: { teachers: 1 } });
+    revalidatePath(`/${tenantSlug}`);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: 'Failed to add teacher.' };
+  }
 }
 
 export async function editTeacherAction(tenantSlug: string, id: string, name: string, subject: string, email: string, status: string) {
-  const success = await updateTenantTeacher(tenantSlug, id, name, subject, email, status);
-  if (success) revalidatePath(`/${tenantSlug}`);
-  return success ? { success: true } : { success: false, error: 'Failed to update teacher.' };
+  try {
+    const db = await getDatabase();
+    await db.collection('teachers').updateOne(
+      { _id: new ObjectId(id), tenantSlug },
+      { $set: { name, subject, email, status } }
+    );
+    revalidatePath(`/${tenantSlug}`);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: 'Failed to update teacher.' };
+  }
 }
 
 export async function removeTeacherAction(tenantSlug: string, id: string) {
-  const success = await deleteTenantTeacher(tenantSlug, id);
-  if (success) revalidatePath(`/${tenantSlug}`);
-  return success ? { success: true } : { success: false, error: 'Failed to delete teacher.' };
+  try {
+    const db = await getDatabase();
+    const result = await db.collection('teachers').deleteOne({ _id: new ObjectId(id), tenantSlug });
+    if (result.deletedCount > 0) {
+      await db.collection('tenants').updateOne({ slug: tenantSlug }, { $inc: { teachers: -1 } });
+    }
+    revalidatePath(`/${tenantSlug}`);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: 'Failed to remove teacher.' };
+  }
 }
